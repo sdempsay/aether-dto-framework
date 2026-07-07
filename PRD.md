@@ -16,7 +16,7 @@ You can copy/paste this into a `.md` file, commit to Git, or convert to PDF late
 
 Aether is a minimal, annotation-driven, **compile-time–generated persistence DTO layer** for Java 21+. It leverages records for immutability and JSR-269 code generation to produce validated, type-safe builders — with zero runtime reflection. Designed from day one for eventual OSGi deployment (no blocking dependencies), Aether prioritizes simplicity, safety, and performance.
 
-> ✅ **MVP Scope**: Flat DTOs only (no nesting/collections), Gson-compatible serialization (manual use), `@Nullable`, `@MinLength`, `@MaxLength`, `@RegexMatch`.
+> ✅ **MVP Scope**: Flat DTOs only (no nesting/collections), Gson-compatible serialization (manual use), `@AetherRecord`, `@Nullable`, `@MinLength`, `@MaxLength`, `@RegexMatch`.
 
 ---
 
@@ -35,19 +35,19 @@ Aether is a minimal, annotation-driven, **compile-time–generated persistence D
 
 ```
 aether/
-├── aether-api/                   # Public API: annotations, interfaces
+├── aether-api/                   # Public API: annotations, ValidationException
 │   └── pom.xml (parent: dempsay-parent)
 ├── aether-builder-gen/           # JSR-269 annotation processor (compile-time only)
 │   └── pom.xml (uses jsr269-utilities)
-└── aether-runtime/               # Future: persistence integration (OSGi-ready bundle)
-    └── pom.xml (depends on exceptional-java)
+└── aether-runtime/               # MVP: thin runtime dependency aggregator; future: persistence (OSGi-ready bundle)
+    └── pom.xml (depends on aether-api + exceptional-java)
 ```
 
 ### Dependencies
 
 | Artifact | Use | Scope |
 |--------|------|-------|
-| `org.dempsay.maven/dempsay-parent/1.0.2` | Maven parent POM | — |
+| `org.dempsay.maven/dempsay-parent/1.0.4` | Maven parent POM | — |
 | `org.dempsay.support.jsr269/jsr269-utilities/1.0.1` | Code generation utilities | `annotationProcessor` only |
 | `org.dempsay.utils/exceptional/1.0.9` | Functional error handling (`ExceptionalResponse<T>`) | Runtime (via `aether-runtime`) |
 
@@ -57,24 +57,33 @@ aether/
 
 ### Format
 - Use **records** as the canonical DTO definition.
+- Annotate with **`@AetherRecord`** to opt in to builder generation.
 - Builder is **generated**, not hand-written.
+- Validation annotations are placed on **record components** (not the record type).
 
 #### Example DTO
 ```java
 // Flat, non-nested, no collections in MVP
-@MinLength(3)
-@MaxLength(50)
-@RegexMatch(pattern = "^[a-zA-Z0-9_]+$")
-public record MyDto(String data) {}
+@AetherRecord
+public record MyDto(
+    @MinLength(3)
+    @MaxLength(50)
+    @RegexMatch(pattern = "^[a-zA-Z0-9_]+$")
+    String data
+) {}
 
 // Nullable field example
+@AetherRecord
 public record SafeDto(@Nullable String notes) {}
 ```
+
+> Records **without** `@AetherRecord` do not receive a generated builder.
 
 ### Supported Annotations (MVP)
 
 | Annotation | Target | Behavior |
 |-----------|--------|----------|
+| `@AetherRecord` | Record type (`ElementType.TYPE`) | Opt-in marker; annotation processor generates `{Name}Builder` only for annotated flat records. |
 | `@Nullable` | Record component | Field may be `null`; no validation applied. Absence implies non-null. |
 | `@MinLength(int)` | String fields only | Enforces `String.length() >= value`. |
 | `@MaxLength(int)` | String fields only | Enforces `String.length() <= value`. |
@@ -90,16 +99,20 @@ public record SafeDto(@Nullable String notes) {}
 
 ### Tooling
 - Uses [`jsr269-utilities`](https://github.com/sdempsay/jsr269-utilities) (`org.dempsay.support.jsr269/jsr269-utilities/1.0.1`) to:
-  - Parse `.java` files (records + annotations).
-  - Generate `*Builder.java` classes with strong typing.
+  - Register the annotation processor via `@Jsr269Processor`.
+  - Discover `@AetherRecord` records and their component annotations.
+  - Generate `*Builder.java` classes with strong typing via `Filer` (string templates; no extra codegen libraries).
 
 ### Generated Builder API
 
 For this record:
 ```java
-@MinLength(3)
-@MaxLength(50)
-public record MyDto(String data) {}
+@AetherRecord
+public record MyDto(
+    @MinLength(3)
+    @MaxLength(50)
+    String data
+) {}
 ```
 
 The processor generates:
@@ -133,11 +146,10 @@ public final class MyDtoBuilder {
       if (len < 3 || len > 50) {
         errors.add("Field 'data' length must be between 3 and 50, got " + len);
       }
-      // No regex check: annotation missing
     }
 
     if (!errors.isEmpty()) {
-      onError.accept(new ValidationException(errors));
+      onError.onError(new ValidationException(errors));
       return ExceptionalResponse.failure();
     }
 
@@ -150,6 +162,7 @@ public final class MyDtoBuilder {
 
 | Feature | Implementation |
 |--------|----------------|
+| **Opt-in generation** | `@AetherRecord` marker required; unmarked records are ignored. |
 | **Null safety** | Non-null by default; `@Nullable` suppresses null check. |
 | **Reusability** | Builder is mutable and reusable (no cloning). |
 | **Error reporting** | Collects all validation errors into a single `ValidationException`. |
@@ -164,8 +177,11 @@ public final class MyDtoBuilder {
 - Example usage:
   ```java
   var gson = new Gson();
-  MyDto dto = new MyDtoBuilder().data("hello").build(listener).getOrThrow();
-  String json = gson.toJson(dto); // → {"data":"hello"}
+  var response = new MyDtoBuilder().data("hello").build(err -> logger.error("{}", err));
+  if (response.wasNoError()) {
+    MyDto dto = response.safeResponse().orElseThrow();
+    String json = gson.toJson(dto); // → {"data":"hello"}
+  }
   ```
 
 ### Not in MVP (Deferred)
@@ -180,21 +196,22 @@ public final class MyDtoBuilder {
 ## 🧪 Section 4: Validation & Error Handling
 
 ### Exception Types
-- `ValidationException` (custom, extends `RuntimeException`)
-  → Contains list of error messages.
+- `ValidationException` in `aether-api` (`org.aether.validation.ValidationException`, extends `RuntimeException`)
+  → Contains list of error messages via `getErrors()` returning `List<String>`.
 
 ### Builder Contract
 ```java
 // Always returns valid DTO or failure
 ExceptionalResponse<MyDto> response = builder.build(listener);
-response.ifSuccess(dto -> {
+if (response.wasNoError()) {
+  MyDto dto = response.safeResponse().orElseThrow();
   // Safe to use dto
-}).ifFailure(err -> {
-  logger.error("Validation failed: {}", err.getErrors());
-});
+} else {
+  // ValidationException was delivered to listener.onError(...)
+}
 ```
 
-> ✅ `ExceptionalResponse` (from `exceptional-java`) provides functional API (`map`, `flatMap`, etc.).
+> ✅ `ExceptionalResponse` (from `exceptional-java`) provides `success()`, `failure()`, `wasError()`, `wasNoError()`, and `safeResponse()`.
 
 ---
 
@@ -210,6 +227,20 @@ response.ifSuccess(dto -> {
 
 ---
 
+## 📋 Design Decisions
+
+Resolved during planning (2026-07):
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Builder trigger | `@AetherRecord` marker | Explicit opt-in; avoids generating builders for every record |
+| Annotation placement | `RECORD_COMPONENT` | Matches JSR 269 record model; type-level constraints deferred |
+| Maven parent | `dempsay-parent:1.0.4` | Aligns with org standard |
+| Codegen | String templates via `Filer` | No extra dependencies beyond PRD list |
+| `aether-runtime` MVP | Thin dependency aggregator | Pulls `aether-api` + `exceptional` for consumers; persistence deferred |
+
+---
+
 ## 🚫 Anti-goals (Reaffirmed)
 
 | Goal | Status |
@@ -222,10 +253,12 @@ response.ifSuccess(dto -> {
 
 ## 📌 Next Steps
 
-1. **Implement JSR-269 processor** (`aether-builder-gen`) to generate builders.
-2. **Add unit tests** for generated builder logic (e.g., null rejection, regex validation).
-3. **Document usage examples** in `README.md`.
-4. After MVP: Add nested/collection support, custom annotations, and OSGi bundle packaging.
+1. **Sync PRD** with planning decisions (complete).
+2. **Scaffold Maven modules** (`aether-api`, `aether-builder-gen`, `aether-runtime`).
+3. **Implement JSR-269 processor** (`aether-builder-gen`) to generate builders for `@AetherRecord` records.
+4. **Add unit tests** for generated builder logic (e.g., null rejection, regex validation, unmarked records ignored).
+5. **Document usage examples** in `README.md`.
+6. After MVP: Add nested/collection support, custom annotations, and OSGi bundle packaging.
 
 ---
 
@@ -239,23 +272,50 @@ import java.lang.annotation.*;
 
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.COMPONENT)
+@Target(ElementType.TYPE)
+public @interface AetherRecord {}
+
+@Documented
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.RECORD_COMPONENT)
 public @interface Nullable {}
 
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.COMPONENT)
+@Target(ElementType.RECORD_COMPONENT)
 public @interface MinLength { int value(); }
 
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.COMPONENT)
+@Target(ElementType.RECORD_COMPONENT)
 public @interface MaxLength { int value(); }
 
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.COMPONENT)
+@Target(ElementType.RECORD_COMPONENT)
 public @interface RegexMatch { String pattern(); }
 ```
 
-> ✅ `RetentionPolicy.SOURCE` ensures no runtime bloat.
+### ValidationException Template
+
+```java
+// aether-api/src/main/java/org/aether/validation/
+package org.aether.validation;
+
+import java.util.List;
+
+public final class ValidationException extends RuntimeException {
+  private final List<String> errors;
+
+  public ValidationException(List<String> errors) {
+    super(String.join("; ", errors));
+    this.errors = List.copyOf(errors);
+  }
+
+  public List<String> getErrors() {
+    return errors;
+  }
+}
+```
+
+> ✅ `RetentionPolicy.SOURCE` on annotations ensures no runtime bloat from annotation metadata.
