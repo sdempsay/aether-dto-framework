@@ -15,7 +15,7 @@ import ${v.qualifiedName};
 </#if>
 </#list>
 
-public final class ${builderName} implements AetherBuilder<${recordName}> {
+public final class ${builderName} implements AetherBuilder<${recordName}><#if viewInterfaces?has_content>, <#list viewInterfaces as v>${v.simpleName}<#sep>, </#list></#if> {
 <#list components as c>
     private ${c.typeName} ${c.name};
 
@@ -31,6 +31,10 @@ public final class ${builderName} implements AetherBuilder<${recordName}> {
     }
 
 <#list components as c>
+    public ${c.typeName} ${c.name}() {
+        return ${c.name};
+    }
+
     public ${builderName} ${c.name}(${c.typeName} ${c.name}) {
         this.${c.name} = ${c.name};
         return this;
@@ -73,21 +77,4 @@ public final class ${builderName} implements AetherBuilder<${recordName}> {
     public ExceptionalResponse<${recordName}> build(final ExceptionalListener onError) {
         return buildRecord(onError);
     }
-<#list viewInterfaces as v>
-
-    /**
-     * Builds a validated instance and returns it as {@link ${v.qualifiedName}}.
-     *
-     * @param onError invoked when validation fails
-     * @return success with the interface view, or failure after {@code onError} is invoked
-     */
-    public ExceptionalResponse<${v.simpleName}> buildAs${v.simpleName}(final ExceptionalListener onError) {
-        final ExceptionalResponse<${recordName}> built = buildRecord(onError);
-        if (built.wasError()) {
-            return ExceptionalResponse.failure();
-        }
-
-        return ExceptionalResponse.success((${v.simpleName}) built.response());
-    }
-</#list>
 }

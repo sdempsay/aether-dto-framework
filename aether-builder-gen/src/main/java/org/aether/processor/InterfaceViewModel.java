@@ -1,7 +1,7 @@
 package org.aether.processor;
 
 /**
- * A record-implemented interface for which the generated builder exposes a typed build view.
+ * A record-implemented interface that the generated builder also implements.
  *
  * @param simpleName the interface simple name used in generated method names
  * @param qualifiedName the fully qualified interface name for imports

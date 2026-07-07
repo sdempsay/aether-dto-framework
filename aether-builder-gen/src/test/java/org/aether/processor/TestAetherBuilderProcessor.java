@@ -2,6 +2,7 @@ package org.aether.processor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
@@ -49,6 +50,7 @@ public class TestAetherBuilderProcessor {
 
         final String source = readFile(builderFile);
         assertTrue(source.contains("public final class MyDtoBuilder implements AetherBuilder<MyDto>"));
+        assertTrue(source.contains("public String data()"));
         assertTrue(source.contains("@Override"));
         assertTrue(source.contains("Field 'data' must not be null"));
         assertTrue(source.contains("length must be between 3 and 50"));
@@ -105,33 +107,28 @@ public class TestAetherBuilderProcessor {
         assertTrue(builderFile.exists(), "Builder source should be generated");
 
         final String source = readFile(builderFile);
-        assertTrue(source.contains("implements AetherBuilder<NamedDto>"));
-        assertTrue(source.contains("buildAsNamed(final ExceptionalListener onError)"));
-        assertTrue(source.contains("ExceptionalResponse<Named>"));
+        assertTrue(source.contains("implements AetherBuilder<NamedDto>, Named"));
+        assertTrue(source.contains("public String name()"));
         assertTrue(source.contains("collectValidationErrors()"));
-        assertTrue(source.contains("return ExceptionalResponse.success((Named) built.response())"));
-        assertTrue(source.contains("final ExceptionalResponse<NamedDto> built = buildRecord(onError)"));
+        assertFalse(source.contains("buildAsNamed"));
     }
 
     @Test
-    public void buildAsInterfaceViewReturnsTypedResponse() throws Exception {
+    public void builderImplementsRecordInterfaces() throws Exception {
         compileAndLoad("Named.java", "NamedDto.java");
 
         final ClassLoader loader = testClassLoader();
+        final Class<?> namedInterface = Class.forName("fixtures.Named", true, loader);
         final Class<?> builderClass = Class.forName("fixtures.NamedDtoBuilder", true, loader);
+
+        assertTrue(namedInterface.isAssignableFrom(builderClass));
+
         final Object builder = builderClass.getConstructor().newInstance();
+        assertNull(builderClass.getMethod("name").invoke(builder));
+
         builderClass.getMethod("name", String.class).invoke(builder, "alice");
-
-        final AtomicReference<Exception> captured = new AtomicReference<>();
-        final Object listener = (org.dempsay.utils.exceptional.api.ExceptionalListener) captured::set;
-        final Object response = builderClass
-                .getMethod("buildAsNamed", org.dempsay.utils.exceptional.api.ExceptionalListener.class)
-                .invoke(builder, listener);
-
-        assertFalse(wasError(response));
-        final Object named = response.getClass().getMethod("response").invoke(response);
-        assertTrue(Class.forName("fixtures.Named", true, loader).isInstance(named));
-        assertEquals("alice", named.getClass().getMethod("name").invoke(named));
+        assertEquals("alice", builderClass.getMethod("name").invoke(builder));
+        assertEquals("alice", namedInterface.getMethod("name").invoke(builder));
     }
 
     @Test

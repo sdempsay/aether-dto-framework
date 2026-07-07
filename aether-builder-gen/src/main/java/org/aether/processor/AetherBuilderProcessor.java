@@ -142,7 +142,7 @@ public class AetherBuilderProcessor extends AbstractProcessor {
      *
      * @param record the annotated record element
      * @param components collected record component metadata
-     * @return view models for compatible implemented interfaces
+     * @return metadata for interfaces the generated builder should implement
      */
     private List<InterfaceViewModel> collectViewInterfaces(
             final TypeElement record,
@@ -189,7 +189,7 @@ public class AetherBuilderProcessor extends AbstractProcessor {
      *
      * @param interfaceElement the candidate view interface
      * @param componentTypes record component names to type mirrors
-     * @return true when the interface can be exposed as a typed build view
+     * @return true when the generated builder can implement the interface
      */
     private boolean isViewCompatible(
             final TypeElement interfaceElement,

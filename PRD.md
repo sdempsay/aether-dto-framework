@@ -149,44 +149,82 @@ The processor generates:
 
 ```java
 // aether-builder-gen outputs this to target/generated-sources/annotations/
-public final class MyDtoBuilder {
-  private String data;
+public final class MyDtoBuilder implements AetherBuilder<MyDto> {
+    private String data;
 
-  public MyDtoBuilder() {}
+    public MyDtoBuilder() {}
 
-  // Copy constructor (defensive copy not required: builder is mutable, DTOs are immutable)
-  public MyDtoBuilder(MyDto source) {
-    if (source != null) this.data = source.data();
-  }
-
-  // Fluent setter
-  public MyDtoBuilder data(String data) {
-    this.data = data;
-    return this;
-  }
-
-  // Validation + build
-  public ExceptionalResponse<MyDto> build(ExceptionalListener onError) {
-    var errors = new ArrayList<String>();
-
-    if (data == null) {
-      errors.add("Field 'data' must not be null");
-    } else {
-      int len = data.length();
-      if (len < 3 || len > 50) {
-        errors.add("Field 'data' length must be between 3 and 50, got " + len);
-      }
+    // Copy constructor (defensive copy not required: builder is mutable, DTOs are immutable)
+    public MyDtoBuilder(MyDto source) {
+        if (source != null) {
+            this.data = source.data();
+        }
     }
 
-    if (!errors.isEmpty()) {
-      onError.accept(new ValidationException(errors));
-      return ExceptionalResponse.failure();
+    // Record-style accessor (read current builder state)
+    public String data() {
+        return data;
     }
 
-    return ExceptionalResponse.success(new MyDto(data));
-  }
+    // Fluent mutator (write builder state)
+    public MyDtoBuilder data(String data) {
+        this.data = data;
+        return this;
+    }
+
+    // Validation + build
+    @Override
+    public ExceptionalResponse<MyDto> build(ExceptionalListener onError) {
+        var errors = new ArrayList<String>();
+
+        if (data == null) {
+            errors.add("Field 'data' must not be null");
+        } else {
+            int len = data.length();
+            if (len < 3 || len > 50) {
+                errors.add("Field 'data' length must be between 3 and 50, got " + len);
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            onError.accept(new ValidationException(errors));
+            return ExceptionalResponse.failure();
+        }
+
+        return ExceptionalResponse.success(new MyDto(data));
+    }
 }
 ```
+
+Each record component produces **two** methods on the builder:
+
+| Method | Returns | Role |
+|--------|---------|------|
+| `field()` | component type | Record-style accessor over in-progress builder state |
+| `field(T value)` | `{Record}Builder` | Fluent mutator |
+
+### Record-implemented interfaces
+
+When a record `implements` one or more interfaces whose abstract accessor methods map to record components (same name, no parameters, compatible return type), the generated builder **also implements those interfaces**. The builder satisfies the interface via the generated `field()` accessors.
+
+Example:
+
+```java
+interface Named {
+    String name();
+}
+
+@AetherRecord
+public record NamedDto(@MinLength(1) String name) implements Named {}
+
+// Generated:
+public final class NamedDtoBuilder implements AetherBuilder<NamedDto>, Named {
+    public String name() { return name; }           // implements Named
+    public NamedDtoBuilder name(String name) { ... } // fluent mutator
+}
+```
+
+> A builder may be a **partial** `Named` before `build()` — fields can be null or fail validation. Callers should treat `build()` as the boundary that produces a validated DTO.
 
 ### Key Design Choices
 
@@ -195,6 +233,8 @@ public final class MyDtoBuilder {
 | **Opt-in generation** | `@AetherRecord` marker required; unmarked records are ignored. |
 | **Null safety** | Non-null by default; `@Nullable` suppresses null check. |
 | **Reusability** | Builder is mutable and reusable (no cloning). |
+| **Accessor + mutator** | Each component gets `field()` and `field(T)` (overload pair). |
+| **Interface mirroring** | Builder `implements` the same compatible interfaces as the record. |
 | **Error reporting** | Collects all validation errors into a single `ValidationException`. |
 | **No reflection** | All checks are static string/concrete logic in generated code. |
 | **Template-driven codegen** | Builder shape is defined in FreeMarker templates, not inline `StringBuilder` code. |
@@ -284,6 +324,7 @@ Resolved during planning (2026-07):
 | Annotation placement | `RECORD_COMPONENT` | Matches JSR 269 record model; type-level constraints deferred |
 | Maven parent | `dempsay-parent:1.0.4` | Aligns with org standard |
 | Codegen | FreeMarker templates via `Filer` | Readable, maintainable templates; compile-time-only dep |
+| Builder accessors | `field()` + `field(T)` per component | Matches record contract; enables builder `implements` on record interfaces |
 | Dependency versions | Root `dependencyManagement` only | One version per artifact across all submodules |
 | Error handling | exceptional-java everywhere | No hand-rolled `try/catch` except inside Exceptional wrappers |
 | `aether-runtime` MVP | Thin dependency aggregator | Pulls `aether-api` + `exceptional` for consumers; persistence deferred |
@@ -413,46 +454,14 @@ public @interface RegexMatch { String pattern(); }
 ### FreeMarker Builder Template (excerpt)
 
 ```ftl
-<#-- aether-builder-gen/src/main/resources/templates/Builder.ftl -->
-package ${packageName};
-
-import java.util.ArrayList;
-<#if needsPattern>import java.util.regex.Pattern;</#if>
-import org.aether.validation.ValidationException;
-import org.dempsay.utils.exceptional.api.ExceptionalListener;
-import org.dempsay.utils.exceptional.api.ExceptionalResponse;
-
-public final class ${builderName} {
+<#-- aether-builder-gen/src/main/resources/templates/Builder.ftl (excerpt) -->
+public final class ${builderName} implements AetherBuilder<${recordName}><#if viewInterfaces?has_content>, ...</#if> {
 <#list components as c>
-  private ${c.typeName} ${c.name};
+    public ${c.typeName} ${c.name}() { return ${c.name}; }
+    public ${builderName} ${c.name}(${c.typeName} ${c.name}) { ... }
 </#list>
-
-  public ${builderName}() {}
-
-  public ${builderName}(${recordName} source) {
-    if (source != null) {
-<#list components as c>
-      this.${c.name} = source.${c.name}();
-</#list>
-    }
-  }
-
-<#list components as c>
-  public ${builderName} ${c.name}(${c.typeName} ${c.name}) {
-    this.${c.name} = ${c.name};
-    return this;
-  }
-
-</#list>
-  public ExceptionalResponse<${recordName}> build(ExceptionalListener onError) {
-    var errors = new ArrayList<String>();
-    <#-- validation blocks emitted per component -->
-    if (!errors.isEmpty()) {
-      onError.accept(new ValidationException(errors));
-      return ExceptionalResponse.failure();
-    }
-    return ExceptionalResponse.success(new ${recordName}(<#list components as c>${c.name}<#sep>, </#list>));
-  }
+    @Override
+    public ExceptionalResponse<${recordName}> build(ExceptionalListener onError) { ... }
 }
 ```
 

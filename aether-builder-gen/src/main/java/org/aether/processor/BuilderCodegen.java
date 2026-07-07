@@ -29,7 +29,7 @@ final class BuilderCodegen {
      * @param packageName target package for the generated builder
      * @param recordSimpleName simple name of the annotated record
      * @param components record component metadata
-     * @param viewInterfaces compatible implemented-interface views
+     * @param viewInterfaces interfaces the generated builder should implement
      * @return generated Java source
      * @throws IOException when the template cannot be read
      * @throws TemplateException when template evaluation fails
