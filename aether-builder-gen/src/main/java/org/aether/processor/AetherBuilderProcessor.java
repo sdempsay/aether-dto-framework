@@ -44,6 +44,7 @@ import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
 /**
  * Generates validated builders for {@link AetherRecord}-annotated flat record DTOs.
  *
+ * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0
  */
 @Jsr269Processor
@@ -136,6 +137,13 @@ public class AetherBuilderProcessor extends AbstractProcessor {
         return valid ? Optional.of(components) : Optional.empty();
     }
 
+    /**
+     * Collects implemented interfaces whose accessors map to record components.
+     *
+     * @param record the annotated record element
+     * @param components collected record component metadata
+     * @return view models for compatible implemented interfaces
+     */
     private List<InterfaceViewModel> collectViewInterfaces(
             final TypeElement record,
             final List<RecordComponentModel> components) {
@@ -176,6 +184,13 @@ public class AetherBuilderProcessor extends AbstractProcessor {
         return views;
     }
 
+    /**
+     * Returns whether every abstract interface accessor maps to a compatible record component.
+     *
+     * @param interfaceElement the candidate view interface
+     * @param componentTypes record component names to type mirrors
+     * @return true when the interface can be exposed as a typed build view
+     */
     private boolean isViewCompatible(
             final TypeElement interfaceElement,
             final Map<String, TypeMirror> componentTypes) {
@@ -198,6 +213,13 @@ public class AetherBuilderProcessor extends AbstractProcessor {
         return true;
     }
 
+    /**
+     * Recursively collects abstract, non-private instance methods declared on an interface tree.
+     *
+     * @param interfaceElement the interface to inspect
+     * @param methods destination list for collected accessor methods
+     * @param visited qualified names already visited to avoid cycles
+     */
     private void collectAbstractInterfaceMethods(
             final TypeElement interfaceElement,
             final List<ExecutableElement> methods,
@@ -231,6 +253,13 @@ public class AetherBuilderProcessor extends AbstractProcessor {
         }
     }
 
+    /**
+     * Returns whether a record component type can satisfy an interface accessor return type.
+     *
+     * @param methodReturn the interface accessor return type
+     * @param componentType the record component type
+     * @return true when the component is assignable to the accessor return type
+     */
     private boolean returnTypeMatchesComponent(
             final TypeMirror methodReturn,
             final TypeMirror componentType) {

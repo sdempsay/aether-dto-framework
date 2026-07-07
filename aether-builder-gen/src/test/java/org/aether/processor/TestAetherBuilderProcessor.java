@@ -106,8 +106,11 @@ public class TestAetherBuilderProcessor {
 
         final String source = readFile(builderFile);
         assertTrue(source.contains("implements AetherBuilder<NamedDto>"));
-        assertTrue(source.contains("buildAsNamed(ExceptionalListener onError)"));
+        assertTrue(source.contains("buildAsNamed(final ExceptionalListener onError)"));
         assertTrue(source.contains("ExceptionalResponse<Named>"));
+        assertTrue(source.contains("collectValidationErrors()"));
+        assertTrue(source.contains("return ExceptionalResponse.success((Named) built.response())"));
+        assertTrue(source.contains("final ExceptionalResponse<NamedDto> built = buildRecord(onError)"));
     }
 
     @Test

@@ -3,31 +3,11 @@ package org.aether.processor;
 /**
  * A record-implemented interface for which the generated builder exposes a typed build view.
  *
+ * @param simpleName the interface simple name used in generated method names
+ * @param qualifiedName the fully qualified interface name for imports
+ * @param needsImport whether the generated builder requires an explicit import
+ * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0
  */
-public final class InterfaceViewModel {
-    private final String simpleName;
-    private final String qualifiedName;
-    private final boolean needsImport;
-
-    InterfaceViewModel(
-            final String simpleName,
-            final String qualifiedName,
-            final boolean needsImport) {
-        this.simpleName = simpleName;
-        this.qualifiedName = qualifiedName;
-        this.needsImport = needsImport;
-    }
-
-    public String getSimpleName() {
-        return simpleName;
-    }
-
-    public String getQualifiedName() {
-        return qualifiedName;
-    }
-
-    public boolean isNeedsImport() {
-        return needsImport;
-    }
+record InterfaceViewModel(String simpleName, String qualifiedName, boolean needsImport) {
 }
