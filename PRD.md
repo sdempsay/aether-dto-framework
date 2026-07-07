@@ -27,7 +27,8 @@ Aether is a minimal, annotation-driven, **compile-time–generated persistence D
 | **Immutable-by-default** | Records enforce immutability; builders produce fully initialized DTOs. |
 | **Compile-time validation & safety** | Generated builders embed checks (null, length, regex) — fail fast at build time. |
 | **Zero runtime reflection** | All code is generated ahead of time → optimal performance + OSGi-compatible. |
-| **No external runtime dependencies beyond spec’d artifacts** | Only `exceptional-java` and `jsr269-utilities`. |
+| **No external runtime dependencies beyond spec’d artifacts** | Runtime: `exceptional-java` only (via `aether-runtime`). Compile-time: `jsr269-utilities` + FreeMarker in `aether-builder-gen`. |
+| **Be Exceptional** | Prefer [exceptional-java](https://github.com/sdempsay/exceptional-java) over `try/catch` for failure paths — in generated builders, processor code, and consumer code. See [WhyBeExceptional.md](https://github.com/sdempsay/exceptional-java/blob/master/WhyBeExceptional.md). |
 
 ---
 
@@ -35,21 +36,47 @@ Aether is a minimal, annotation-driven, **compile-time–generated persistence D
 
 ```
 aether/
+├── pom.xml                       # Aggregator: modules + dependencyManagement (+ pluginManagement)
 ├── aether-api/                   # Public API: annotations, ValidationException
-│   └── pom.xml (parent: dempsay-parent)
+│   └── pom.xml (parent: aether)
 ├── aether-builder-gen/           # JSR-269 annotation processor (compile-time only)
-│   └── pom.xml (uses jsr269-utilities)
+│   ├── pom.xml (parent: aether; no inline versions)
+│   └── src/main/resources/templates/   # FreeMarker builder templates (*.ftl)
 └── aether-runtime/               # MVP: thin runtime dependency aggregator; future: persistence (OSGi-ready bundle)
-    └── pom.xml (depends on aether-api + exceptional-java)
+    └── pom.xml (parent: aether; no inline versions)
 ```
+
+### Dependency management
+
+All external dependency **versions are declared once** in the root [`pom.xml`](pom.xml) under `<dependencyManagement>`. Child modules reference artifacts by `groupId` + `artifactId` only (plus `scope` where needed); they **must not** repeat version numbers.
+
+Internal reactor modules (`aether-api`, `aether-builder-gen`, `aether-runtime`) are also listed in `dependencyManagement` at `${project.version}` so cross-module references stay consistent.
+
+Version properties (e.g. `exceptional.version`, `freemarker.version`) live in the root `<properties>` section and are referenced from `dependencyManagement` — single place to bump a library.
+
+Annotation processor paths (`maven-compiler-plugin` / `annotationProcessorPaths`) should use the same managed coordinates (no duplicate versions in child POMs).
+
+#### Root `dependencyManagement` (target)
+
+| Artifact | Version property | Used by |
+|--------|------------------|---------|
+| `org.aether:aether-api` | `${project.version}` | `aether-builder-gen`, `aether-runtime` |
+| `org.aether:aether-builder-gen` | `${project.version}` | Consumer `annotationProcessorPaths` (documented in README) |
+| `org.aether:aether-runtime` | `${project.version}` | Consumers |
+| `org.dempsay.support.jsr269:jsr269-utilities` | `${jsr269-utilities.version}` | `aether-builder-gen` (compile + processor path) |
+| `org.freemarker:freemarker` | `${freemarker.version}` | `aether-builder-gen` (compile) |
+| `org.dempsay.utils:exceptional` | `${exceptional.version}` | `aether-builder-gen` (provided), `aether-runtime` (compile) |
+
+Parent POM: `org.dempsay.maven:dempsay-parent:1.0.4` (inherits plugin versions; not duplicated in Aether BOM).
 
 ### Dependencies
 
 | Artifact | Use | Scope |
 |--------|------|-------|
 | `org.dempsay.maven/dempsay-parent/1.0.4` | Maven parent POM | — |
-| `org.dempsay.support.jsr269/jsr269-utilities/1.0.1` | Code generation utilities | `annotationProcessor` only |
-| `org.dempsay.utils/exceptional/1.0.9` | Functional error handling (`ExceptionalResponse<T>`) | Runtime (via `aether-runtime`) |
+| `org.dempsay.support.jsr269/jsr269-utilities` | Processor registration (`@Jsr269Processor`) | `annotationProcessor` only |
+| `org.freemarker/freemarker` | Builder source generation templates | Compile-time only (`aether-builder-gen`) |
+| `org.dempsay.utils/exceptional` | Functional error handling (`ExceptionalResponse<T>`, `ExceptionalSupplier`, `ExceptionalAction`) | Runtime (via `aether-runtime`); compile-time in `aether-builder-gen` |
 
 ---
 
@@ -101,7 +128,10 @@ public record SafeDto(@Nullable String notes) {}
 - Uses [`jsr269-utilities`](https://github.com/sdempsay/jsr269-utilities) (`org.dempsay.support.jsr269/jsr269-utilities/1.0.1`) to:
   - Register the annotation processor via `@Jsr269Processor`.
   - Discover `@AetherRecord` records and their component annotations.
-  - Generate `*Builder.java` classes with strong typing via `Filer` (string templates; no extra codegen libraries).
+- Uses **FreeMarker** (`org.freemarker:freemarker:2.3.34`) to render builder source from templates:
+  - Templates live in `aether-builder-gen/src/main/resources/templates/` (e.g. `Builder.ftl`).
+  - The processor builds a template model (`RecordComponentModel` list, package name, record name) and writes output via `Filer`.
+  - FreeMarker is a **compile-time-only** dependency; it is not on the consumer classpath.
 
 ### Generated Builder API
 
@@ -149,7 +179,7 @@ public final class MyDtoBuilder {
     }
 
     if (!errors.isEmpty()) {
-      onError.onError(new ValidationException(errors));
+      onError.accept(new ValidationException(errors));
       return ExceptionalResponse.failure();
     }
 
@@ -167,6 +197,7 @@ public final class MyDtoBuilder {
 | **Reusability** | Builder is mutable and reusable (no cloning). |
 | **Error reporting** | Collects all validation errors into a single `ValidationException`. |
 | **No reflection** | All checks are static string/concrete logic in generated code. |
+| **Template-driven codegen** | Builder shape is defined in FreeMarker templates, not inline `StringBuilder` code. |
 
 ---
 
@@ -195,6 +226,10 @@ public final class MyDtoBuilder {
 
 ## 🧪 Section 4: Validation & Error Handling
 
+Aether uses [exceptional-java](https://github.com/sdempsay/exceptional-java) for all explicit failure handling. Read [WhyBeExceptional.md](https://github.com/sdempsay/exceptional-java/blob/master/WhyBeExceptional.md) for the rationale: validation and I/O failures are usually non-recoverable, so they should be acknowledged via `ExceptionalResponse` rather than scattered `try/catch` blocks.
+
+**Project rule**: Unless there is a specific reason to use `try/catch` (e.g. inside `ExceptionalSupplier.of(() -> ...)` where the library owns the catch), Aether code uses `ExceptionalSupplier`, `ExceptionalAction`, and `ExceptionalResponse`.
+
 ### Exception Types
 - `ValidationException` in `aether-api` (`org.aether.validation.ValidationException`, extends `RuntimeException`)
   → Contains list of error messages via `getErrors()` returning `List<String>`.
@@ -202,16 +237,28 @@ public final class MyDtoBuilder {
 ### Builder Contract
 ```java
 // Always returns valid DTO or failure
-ExceptionalResponse<MyDto> response = builder.build(listener);
+ExceptionalResponse<MyDto> response = new MyDtoBuilder()
+    .data("hello")
+    .build(err -> logger.error("Validation failed", err));
+
 if (response.wasNoError()) {
-  MyDto dto = response.safeResponse().orElseThrow();
+  MyDto dto = response.response();
   // Safe to use dto
 } else {
-  // ValidationException was delivered to listener.onError(...)
+  // ValidationException was delivered to listener.accept(...)
 }
 ```
 
-> ✅ `ExceptionalResponse` (from `exceptional-java`) provides `success()`, `failure()`, `wasError()`, `wasNoError()`, and `safeResponse()`.
+`ExceptionalListener` extends `Consumer<Exception>`, so lambdas and `accept(...)` are both valid in generated builders.
+
+### Processor code (internal)
+```java
+ExceptionalSupplier.of(() -> BuilderCodegen.render(packageName, recordName, components))
+    .with(e -> error(record, "Failed to generate builder: " + e.getMessage()))
+    .execute();
+```
+
+> ✅ `ExceptionalResponse` provides `success()`, `failure()`, `wasError()`, `wasNoError()`, `safeResponse()`, `map()`, `then()`, `chain()`, and `stream()`. See [WhyBeExceptional.md](https://github.com/sdempsay/exceptional-java/blob/master/WhyBeExceptional.md).
 
 ---
 
@@ -236,7 +283,9 @@ Resolved during planning (2026-07):
 | Builder trigger | `@AetherRecord` marker | Explicit opt-in; avoids generating builders for every record |
 | Annotation placement | `RECORD_COMPONENT` | Matches JSR 269 record model; type-level constraints deferred |
 | Maven parent | `dempsay-parent:1.0.4` | Aligns with org standard |
-| Codegen | String templates via `Filer` | No extra dependencies beyond PRD list |
+| Codegen | FreeMarker templates via `Filer` | Readable, maintainable templates; compile-time-only dep |
+| Dependency versions | Root `dependencyManagement` only | One version per artifact across all submodules |
+| Error handling | exceptional-java everywhere | No hand-rolled `try/catch` except inside Exceptional wrappers |
 | `aether-runtime` MVP | Thin dependency aggregator | Pulls `aether-api` + `exceptional` for consumers; persistence deferred |
 
 ---
@@ -245,7 +294,7 @@ Resolved during planning (2026-07):
 
 | Goal | Status |
 |------|--------|
-| No external frameworks beyond listed deps | ✅ Compliant |
+| No external frameworks beyond listed deps | ✅ Compliant (FreeMarker is compile-time only in `aether-builder-gen`) |
 | No runtime reflection or proxying | ✅ Compliant via codegen |
 | OSGi support deferred but design must not prevent future bundle conversion | ✅ Modular structure ensures this |
 
@@ -254,11 +303,76 @@ Resolved during planning (2026-07):
 ## 📌 Next Steps
 
 1. **Sync PRD** with planning decisions (complete).
-2. **Scaffold Maven modules** (`aether-api`, `aether-builder-gen`, `aether-runtime`).
-3. **Implement JSR-269 processor** (`aether-builder-gen`) to generate builders for `@AetherRecord` records.
-4. **Add unit tests** for generated builder logic (e.g., null rejection, regex validation, unmarked records ignored).
-5. **Document usage examples** in `README.md`.
-6. After MVP: Add nested/collection support, custom annotations, and OSGi bundle packaging.
+2. **Scaffold Maven modules** (`aether-api`, `aether-builder-gen`, `aether-runtime`) (complete).
+3. **Implement JSR-269 processor** (`aether-builder-gen`) to generate builders for `@AetherRecord` records (complete).
+4. **Centralize dependency versions** — move all external (and internal) dependency versions to root `pom.xml` `dependencyManagement`; remove inline versions from child modules and processor paths (complete).
+5. **Refactor codegen to FreeMarker** — replace inline `StringBuilder` generation with `Builder.ftl` and template model rendering (complete).
+6. **Add unit tests** for generated builder logic (e.g., null rejection, regex validation, unmarked records ignored) (complete).
+7. **Document usage examples** in `README.md` (complete).
+8. After MVP: Add nested/collection support, custom annotations, and OSGi bundle packaging.
+
+---
+
+## 📎 Appendix: Root POM dependency management (template)
+
+```xml
+<!-- aether/pom.xml -->
+<properties>
+  <exceptional.version>1.0.9</exceptional.version>
+  <freemarker.version>2.3.34</freemarker.version>
+  <jsr269-utilities.version>1.0.1</jsr269-utilities.version>
+</properties>
+
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.aether</groupId>
+      <artifactId>aether-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.aether</groupId>
+      <artifactId>aether-builder-gen</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.aether</groupId>
+      <artifactId>aether-runtime</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dempsay.support.jsr269</groupId>
+      <artifactId>jsr269-utilities</artifactId>
+      <version>${jsr269-utilities.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.freemarker</groupId>
+      <artifactId>freemarker</artifactId>
+      <version>${freemarker.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dempsay.utils</groupId>
+      <artifactId>exceptional</artifactId>
+      <version>${exceptional.version}</version>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+```
+
+Child module example (no versions on managed deps):
+
+```xml
+<dependencies>
+  <dependency>
+    <groupId>org.aether</groupId>
+    <artifactId>aether-api</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.freemarker</groupId>
+    <artifactId>freemarker</artifactId>
+  </dependency>
+</dependencies>
+```
 
 ---
 
@@ -294,6 +408,52 @@ public @interface MaxLength { int value(); }
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.RECORD_COMPONENT)
 public @interface RegexMatch { String pattern(); }
+```
+
+### FreeMarker Builder Template (excerpt)
+
+```ftl
+<#-- aether-builder-gen/src/main/resources/templates/Builder.ftl -->
+package ${packageName};
+
+import java.util.ArrayList;
+<#if needsPattern>import java.util.regex.Pattern;</#if>
+import org.aether.validation.ValidationException;
+import org.dempsay.utils.exceptional.api.ExceptionalListener;
+import org.dempsay.utils.exceptional.api.ExceptionalResponse;
+
+public final class ${builderName} {
+<#list components as c>
+  private ${c.typeName} ${c.name};
+</#list>
+
+  public ${builderName}() {}
+
+  public ${builderName}(${recordName} source) {
+    if (source != null) {
+<#list components as c>
+      this.${c.name} = source.${c.name}();
+</#list>
+    }
+  }
+
+<#list components as c>
+  public ${builderName} ${c.name}(${c.typeName} ${c.name}) {
+    this.${c.name} = ${c.name};
+    return this;
+  }
+
+</#list>
+  public ExceptionalResponse<${recordName}> build(ExceptionalListener onError) {
+    var errors = new ArrayList<String>();
+    <#-- validation blocks emitted per component -->
+    if (!errors.isEmpty()) {
+      onError.accept(new ValidationException(errors));
+      return ExceptionalResponse.failure();
+    }
+    return ExceptionalResponse.success(new ${recordName}(<#list components as c>${c.name}<#sep>, </#list>));
+  }
+}
 ```
 
 ### ValidationException Template

@@ -17,19 +17,19 @@
     <dependency>
       <groupId>org.aether</groupId>
       <artifactId>aether-api</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dempsay.utils</groupId>
       <artifactId>exceptional</artifactId>
-      <version>1.0.9</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.dempsay.support.jsr269</groupId>
       <artifactId>jsr269-utilities</artifactId>
-      <version>1.0.1</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.freemarker</groupId>
+      <artifactId>freemarker</artifactId>
     </dependency>
   </dependencies>
 
@@ -38,15 +38,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.dempsay.support.jsr269</groupId>
-              <artifactId>jsr269-utilities</artifactId>
-              <version>1.0.1</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
       </plugin>
     </plugins>
   </build>

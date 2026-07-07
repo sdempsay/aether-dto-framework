@@ -55,6 +55,8 @@ Records without `@AetherRecord` do not receive a generated builder.
 
 ## Use the Generated Builder
 
+Aether uses [exceptional-java](https://github.com/sdempsay/exceptional-java) for validation failures. See [WhyBeExceptional.md](https://github.com/sdempsay/exceptional-java/blob/master/WhyBeExceptional.md) for the design rationale.
+
 ```java
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 
@@ -64,7 +66,7 @@ ExceptionalResponse<UserDto> response = new UserDtoBuilder()
     .build(err -> logger.error("Validation failed", err));
 
 if (response.wasNoError()) {
-    UserDto user = response.safeResponse().orElseThrow();
+    UserDto user = response.response();
     // use user
 }
 ```

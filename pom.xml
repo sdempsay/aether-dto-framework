@@ -21,4 +21,65 @@
     <module>aether-builder-gen</module>
     <module>aether-runtime</module>
   </modules>
+
+  <properties>
+    <exceptional.version>1.0.9</exceptional.version>
+    <freemarker.version>2.3.34</freemarker.version>
+    <jsr269-utilities.version>1.0.1</jsr269-utilities.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.aether</groupId>
+        <artifactId>aether-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.aether</groupId>
+        <artifactId>aether-builder-gen</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.aether</groupId>
+        <artifactId>aether-runtime</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dempsay.support.jsr269</groupId>
+        <artifactId>jsr269-utilities</artifactId>
+        <version>${jsr269-utilities.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.freemarker</groupId>
+        <artifactId>freemarker</artifactId>
+        <version>${freemarker.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dempsay.utils</groupId>
+        <artifactId>exceptional</artifactId>
+        <version>${exceptional.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.dempsay.support.jsr269</groupId>
+                <artifactId>jsr269-utilities</artifactId>
+                <version>${jsr269-utilities.version}</version>
+              </path>
+            </annotationProcessorPaths>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>

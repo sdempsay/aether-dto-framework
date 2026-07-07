@@ -31,6 +31,9 @@ import org.aether.annotations.MinLength;
 import org.aether.annotations.Nullable;
 import org.aether.annotations.RegexMatch;
 import org.dempsay.support.jsr269.annotation.Jsr269Processor;
+import org.dempsay.utils.exceptional.api.ExceptionalAction;
+import org.dempsay.utils.exceptional.api.ExceptionalResponse;
+import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
 
 /**
  * Generates validated builders for {@link AetherRecord}-annotated flat record DTOs.
@@ -181,15 +184,28 @@ public class AetherBuilderProcessor extends AbstractProcessor {
     private void generateBuilder(final TypeElement record, final List<RecordComponentModel> components) {
         final String packageName = elements.getPackageOf(record).getQualifiedName().toString();
         final String recordSimpleName = record.getSimpleName().toString();
-        final String source = BuilderCodegen.generate(packageName, recordSimpleName, components);
 
-        try {
-            final JavaFileObject sourceFile = filer.createSourceFile(packageName + "." + recordSimpleName + "Builder", record);
-            try (var writer = sourceFile.openWriter()) {
-                writer.write(source);
-            }
-        } catch (IOException e) {
-            error(record, "Failed to generate builder: " + e.getMessage());
+        final ExceptionalResponse<String> rendered = ExceptionalSupplier
+                .of(() -> BuilderCodegen.render(packageName, recordSimpleName, components))
+                .with(e -> error(record, "Failed to generate builder: " + e.getMessage()))
+                .execute();
+
+        if (rendered.wasNoError()) {
+            ExceptionalAction
+                    .of(() -> writeBuilderSource(record, packageName, recordSimpleName, rendered.response()))
+                    .with(e -> error(record, "Failed to write builder: " + e.getMessage()))
+                    .execute();
+        }
+    }
+
+    private void writeBuilderSource(
+            final TypeElement record,
+            final String packageName,
+            final String recordSimpleName,
+            final String source) throws IOException {
+        final JavaFileObject sourceFile = filer.createSourceFile(packageName + "." + recordSimpleName + "Builder", record);
+        try (var writer = sourceFile.openWriter()) {
+            writer.write(source);
         }
     }
 

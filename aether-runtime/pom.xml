@@ -17,12 +17,10 @@
     <dependency>
       <groupId>org.aether</groupId>
       <artifactId>aether-api</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dempsay.utils</groupId>
       <artifactId>exceptional</artifactId>
-      <version>1.0.9</version>
     </dependency>
   </dependencies>
 

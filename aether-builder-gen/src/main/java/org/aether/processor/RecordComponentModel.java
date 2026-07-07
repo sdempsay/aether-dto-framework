@@ -5,7 +5,7 @@ package org.aether.processor;
  *
  * @since 0.1.0
  */
-final class RecordComponentModel {
+public final class RecordComponentModel {
     private final String name;
     private final String typeName;
     private final boolean nullable;
@@ -28,35 +28,39 @@ final class RecordComponentModel {
         this.regexPattern = regexPattern;
     }
 
-    String name() {
+    public String getName() {
         return name;
     }
 
-    String typeName() {
+    public String getTypeName() {
         return typeName;
     }
 
-    boolean nullable() {
+    public boolean isNullable() {
         return nullable;
     }
 
-    Integer minLength() {
+    public Integer getMinLength() {
         return minLength;
     }
 
-    Integer maxLength() {
+    public Integer getMaxLength() {
         return maxLength;
     }
 
-    String regexPattern() {
+    public String getRegexPattern() {
         return regexPattern;
     }
 
-    boolean isString() {
+    public boolean isString() {
         return "String".equals(typeName) || "java.lang.String".equals(typeName);
     }
 
-    boolean hasRegex() {
+    public boolean hasRegex() {
         return regexPattern != null;
+    }
+
+    public boolean hasStringConstraints() {
+        return minLength != null || maxLength != null || hasRegex();
     }
 }
