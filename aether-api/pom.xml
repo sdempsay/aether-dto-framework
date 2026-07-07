@@ -11,5 +11,12 @@
   <artifactId>aether-api</artifactId>
   <packaging>jar</packaging>
 
-  <description>Public API: annotations and ValidationException</description>
+  <description>Public API: annotations, AetherBuilder, and ValidationException</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.dempsay.utils</groupId>
+      <artifactId>exceptional</artifactId>
+    </dependency>
+  </dependencies>
 </project>

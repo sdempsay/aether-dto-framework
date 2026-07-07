@@ -48,7 +48,8 @@ public class TestAetherBuilderProcessor {
         assertTrue(builderFile.exists(), "Builder source should be generated");
 
         final String source = readFile(builderFile);
-        assertTrue(source.contains("public final class MyDtoBuilder"));
+        assertTrue(source.contains("public final class MyDtoBuilder implements AetherBuilder<MyDto>"));
+        assertTrue(source.contains("@Override"));
         assertTrue(source.contains("Field 'data' must not be null"));
         assertTrue(source.contains("length must be between 3 and 50"));
         assertTrue(source.contains("Pattern.matches"));
@@ -94,6 +95,40 @@ public class TestAetherBuilderProcessor {
         assertFalse(wasError(success));
         final Object dto = success.getClass().getMethod("response").invoke(success);
         assertEquals("valid_name", dto.getClass().getMethod("data").invoke(dto));
+    }
+
+    @Test
+    public void generatesBuilderForRecordImplementingInterface() throws Exception {
+        compileFixtures("Named.java", "NamedDto.java");
+
+        final File builderFile = outputDir.resolve("fixtures/NamedDtoBuilder.java").toFile();
+        assertTrue(builderFile.exists(), "Builder source should be generated");
+
+        final String source = readFile(builderFile);
+        assertTrue(source.contains("implements AetherBuilder<NamedDto>"));
+        assertTrue(source.contains("buildAsNamed(ExceptionalListener onError)"));
+        assertTrue(source.contains("ExceptionalResponse<Named>"));
+    }
+
+    @Test
+    public void buildAsInterfaceViewReturnsTypedResponse() throws Exception {
+        compileAndLoad("Named.java", "NamedDto.java");
+
+        final ClassLoader loader = testClassLoader();
+        final Class<?> builderClass = Class.forName("fixtures.NamedDtoBuilder", true, loader);
+        final Object builder = builderClass.getConstructor().newInstance();
+        builderClass.getMethod("name", String.class).invoke(builder, "alice");
+
+        final AtomicReference<Exception> captured = new AtomicReference<>();
+        final Object listener = (org.dempsay.utils.exceptional.api.ExceptionalListener) captured::set;
+        final Object response = builderClass
+                .getMethod("buildAsNamed", org.dempsay.utils.exceptional.api.ExceptionalListener.class)
+                .invoke(builder, listener);
+
+        assertFalse(wasError(response));
+        final Object named = response.getClass().getMethod("response").invoke(response);
+        assertTrue(Class.forName("fixtures.Named", true, loader).isInstance(named));
+        assertEquals("alice", named.getClass().getMethod("name").invoke(named));
     }
 
     @Test
@@ -145,8 +180,8 @@ public class TestAetherBuilderProcessor {
         return diagnostics;
     }
 
-    private void compileAndLoad(final String fixtureName) {
-        compileFixtures(fixtureName);
+    private void compileAndLoad(final String... fixtureNames) {
+        compileFixtures(fixtureNames);
     }
 
     private Object invokeBuild(final Object builder, final AtomicReference<Exception> captured) throws Exception {

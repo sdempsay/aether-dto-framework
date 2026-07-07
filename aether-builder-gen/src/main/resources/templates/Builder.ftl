@@ -4,11 +4,17 @@ import java.util.ArrayList;
 <#if needsPattern>
 import java.util.regex.Pattern;
 </#if>
+import org.aether.builder.AetherBuilder;
 import org.aether.validation.ValidationException;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
+<#list viewInterfaces as v>
+  <#if v.needsImport>
+import ${v.qualifiedName};
+  </#if>
+</#list>
 
-public final class ${builderName} {
+public final class ${builderName} implements AetherBuilder<${recordName}> {
 <#list components as c>
   private ${c.typeName} ${c.name};
 
@@ -30,6 +36,7 @@ public final class ${builderName} {
   }
 
 </#list>
+  @Override
   public ExceptionalResponse<${recordName}> build(ExceptionalListener onError) {
     var errors = new ArrayList<String>();
 
@@ -54,4 +61,14 @@ public final class ${builderName} {
 
     return ExceptionalResponse.success(new ${recordName}(<#list components as c>${c.name}<#sep>, </#list>));
   }
+<#list viewInterfaces as v>
+
+  public ExceptionalResponse<${v.simpleName}> buildAs${v.simpleName}(ExceptionalListener onError) {
+    ExceptionalResponse<${recordName}> built = build(onError);
+    if (built.wasError()) {
+      return ExceptionalResponse.failure();
+    }
+    return ExceptionalResponse.success(built.response());
+  }
+</#list>
 }

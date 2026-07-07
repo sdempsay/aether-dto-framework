@@ -2,7 +2,10 @@ package org.aether.processor;
 
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,12 +19,15 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
@@ -55,6 +61,7 @@ public class AetherBuilderProcessor extends AbstractProcessor {
             "java.lang.Double");
 
     private Elements elements;
+    private Types types;
     private Filer filer;
     private Messager messager;
 
@@ -62,6 +69,7 @@ public class AetherBuilderProcessor extends AbstractProcessor {
     public synchronized void init(final ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         this.elements = processingEnv.getElementUtils();
+        this.types = processingEnv.getTypeUtils();
         this.filer = processingEnv.getFiler();
         this.messager = processingEnv.getMessager();
     }
@@ -80,7 +88,8 @@ public class AetherBuilderProcessor extends AbstractProcessor {
                 continue;
             }
 
-            generateBuilder(record, components.get());
+            final List<InterfaceViewModel> viewInterfaces = collectViewInterfaces(record, components.get());
+            generateBuilder(record, components.get(), viewInterfaces);
         }
         return false;
     }
@@ -125,6 +134,108 @@ public class AetherBuilderProcessor extends AbstractProcessor {
         }
 
         return valid ? Optional.of(components) : Optional.empty();
+    }
+
+    private List<InterfaceViewModel> collectViewInterfaces(
+            final TypeElement record,
+            final List<RecordComponentModel> components) {
+        final Map<String, TypeMirror> componentTypes = new HashMap<>();
+        for (Element enclosed : record.getEnclosedElements()) {
+            if (enclosed.getKind() != ElementKind.RECORD_COMPONENT) {
+                continue;
+            }
+            final VariableElement component = (VariableElement) enclosed;
+            componentTypes.put(component.getSimpleName().toString(), component.asType());
+        }
+
+        final String packageName = elements.getPackageOf(record).getQualifiedName().toString();
+        final Set<String> seenQualifiedNames = new LinkedHashSet<>();
+        final List<InterfaceViewModel> views = new ArrayList<>();
+
+        for (TypeMirror interfaceMirror : record.getInterfaces()) {
+            if (interfaceMirror.getKind() != TypeKind.DECLARED) {
+                continue;
+            }
+
+            final TypeElement interfaceElement = (TypeElement) types.asElement(interfaceMirror);
+            if (!isViewCompatible(interfaceElement, componentTypes)) {
+                continue;
+            }
+
+            final String qualifiedName = elements.getBinaryName(interfaceElement).toString();
+            if (!seenQualifiedNames.add(qualifiedName)) {
+                continue;
+            }
+
+            final String simpleName = interfaceElement.getSimpleName().toString();
+            final boolean needsImport = !qualifiedName.startsWith("java.lang.")
+                    && !elements.getPackageOf(interfaceElement).getQualifiedName().contentEquals(packageName);
+            views.add(new InterfaceViewModel(simpleName, qualifiedName, needsImport));
+        }
+
+        return views;
+    }
+
+    private boolean isViewCompatible(
+            final TypeElement interfaceElement,
+            final Map<String, TypeMirror> componentTypes) {
+        final List<ExecutableElement> accessorMethods = new ArrayList<>();
+        collectAbstractInterfaceMethods(interfaceElement, accessorMethods, new LinkedHashSet<>());
+
+        for (ExecutableElement method : accessorMethods) {
+            final String methodName = method.getSimpleName().toString();
+            final TypeMirror componentType = componentTypes.get(methodName);
+            if (componentType == null) {
+                return false;
+            }
+            if (!method.getParameters().isEmpty()) {
+                return false;
+            }
+            if (!returnTypeMatchesComponent(method.getReturnType(), componentType)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void collectAbstractInterfaceMethods(
+            final TypeElement interfaceElement,
+            final List<ExecutableElement> methods,
+            final Set<String> visited) {
+        final String qualifiedName = elements.getBinaryName(interfaceElement).toString();
+        if (!visited.add(qualifiedName)) {
+            return;
+        }
+
+        for (TypeMirror superInterface : interfaceElement.getInterfaces()) {
+            if (superInterface.getKind() == TypeKind.DECLARED) {
+                collectAbstractInterfaceMethods(
+                        (TypeElement) types.asElement(superInterface),
+                        methods,
+                        visited);
+            }
+        }
+
+        for (Element enclosed : interfaceElement.getEnclosedElements()) {
+            if (enclosed.getKind() != ElementKind.METHOD) {
+                continue;
+            }
+
+            final ExecutableElement method = (ExecutableElement) enclosed;
+            if (method.getModifiers().contains(Modifier.STATIC)
+                    || method.getModifiers().contains(Modifier.PRIVATE)
+                    || method.isDefault()) {
+                continue;
+            }
+            methods.add(method);
+        }
+    }
+
+    private boolean returnTypeMatchesComponent(
+            final TypeMirror methodReturn,
+            final TypeMirror componentType) {
+        return types.isSameType(methodReturn, componentType)
+                || types.isSubtype(componentType, methodReturn);
     }
 
     private boolean isSupportedType(final TypeMirror typeMirror) {
@@ -181,12 +292,15 @@ public class AetherBuilderProcessor extends AbstractProcessor {
         return typeMirror.toString();
     }
 
-    private void generateBuilder(final TypeElement record, final List<RecordComponentModel> components) {
+    private void generateBuilder(
+            final TypeElement record,
+            final List<RecordComponentModel> components,
+            final List<InterfaceViewModel> viewInterfaces) {
         final String packageName = elements.getPackageOf(record).getQualifiedName().toString();
         final String recordSimpleName = record.getSimpleName().toString();
 
         final ExceptionalResponse<String> rendered = ExceptionalSupplier
-                .of(() -> BuilderCodegen.render(packageName, recordSimpleName, components))
+                .of(() -> BuilderCodegen.render(packageName, recordSimpleName, components, viewInterfaces))
                 .with(e -> error(record, "Failed to generate builder: " + e.getMessage()))
                 .execute();
 

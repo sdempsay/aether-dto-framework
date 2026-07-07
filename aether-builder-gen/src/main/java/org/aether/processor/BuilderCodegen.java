@@ -25,13 +25,15 @@ final class BuilderCodegen {
     static String render(
             final String packageName,
             final String recordSimpleName,
-            final List<RecordComponentModel> components) throws IOException, TemplateException {
+            final List<RecordComponentModel> components,
+            final List<InterfaceViewModel> viewInterfaces) throws IOException, TemplateException {
         final Template template = CONFIGURATION.getTemplate("Builder.ftl");
         final Map<String, Object> model = new HashMap<>();
         model.put("packageName", packageName);
         model.put("recordName", recordSimpleName);
         model.put("builderName", recordSimpleName + "Builder");
         model.put("components", components);
+        model.put("viewInterfaces", viewInterfaces);
         model.put("needsPattern", components.stream().anyMatch(RecordComponentModel::hasRegex));
 
         final StringWriter output = new StringWriter();
