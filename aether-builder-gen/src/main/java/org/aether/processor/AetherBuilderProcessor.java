@@ -1,6 +1,6 @@
 package org.aether.processor;
 
-import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +31,7 @@ import org.aether.annotations.MinLength;
 import org.aether.annotations.Nullable;
 import org.aether.annotations.RegexMatch;
 import org.dempsay.support.jsr269.annotation.Jsr269Processor;
-import org.dempsay.utils.exceptional.api.ExceptionalAction;
+import org.dempsay.utils.exceptional.api.ExceptionalResourceAction;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
 
@@ -191,22 +191,22 @@ public class AetherBuilderProcessor extends AbstractProcessor {
                 .execute();
 
         if (rendered.wasNoError()) {
-            ExceptionalAction
-                    .of(() -> writeBuilderSource(record, packageName, recordSimpleName, rendered.response()))
+            ExceptionalResourceAction
+                    .of(
+                            () -> openWriter(record, packageName, recordSimpleName),
+                            writer -> writer.write(rendered.response()))
                     .with(e -> error(record, "Failed to write builder: " + e.getMessage()))
                     .execute();
         }
     }
 
-    private void writeBuilderSource(
+    private Writer openWriter(
             final TypeElement record,
             final String packageName,
-            final String recordSimpleName,
-            final String source) throws IOException {
-        final JavaFileObject sourceFile = filer.createSourceFile(packageName + "." + recordSimpleName + "Builder", record);
-        try (var writer = sourceFile.openWriter()) {
-            writer.write(source);
-        }
+            final String recordSimpleName) throws Exception {
+        final JavaFileObject sourceFile = filer.createSourceFile(
+                packageName + "." + recordSimpleName + "Builder", record);
+        return sourceFile.openWriter();
     }
 
     private void error(final Element element, final String message) {
