@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 /**
  * Enforces a maximum {@link String#length()} on a string record component.
  *
+ * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0
  */
 @Documented

@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 /**
  * Opt-in marker that triggers generation of a validated builder for a flat record DTO.
  *
+ * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0
  */
 @Documented

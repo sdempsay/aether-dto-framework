@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 /**
  * Marks a record component as nullable; suppresses the default non-null check.
  *
+ * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0
  */
 @Documented

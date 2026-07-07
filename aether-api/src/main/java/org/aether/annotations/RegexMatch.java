@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 /**
  * Enforces {@link java.util.regex.Pattern#matches(String, CharSequence)} on a string record component.
  *
+ * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0
  */
 @Documented

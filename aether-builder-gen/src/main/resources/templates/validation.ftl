@@ -17,7 +17,7 @@ ${pad}    errors.add("Field '${c.name}' length must be at most ${c.maxLength?c},
 ${pad}}
 </#if>
 <#if c.hasRegex()>
-${pad}if (!Pattern.matches("${c.regexPattern?js_string}", ${c.name})) {
+${pad}if (!Pattern.matches("${c.regexPattern?j_string}", ${c.name})) {
 ${pad}    errors.add("Field '${c.name}' does not match pattern");
 ${pad}}
 </#if>
