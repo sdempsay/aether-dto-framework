@@ -41,7 +41,7 @@ aether/
 │   └── pom.xml (parent: aether)
 ├── aether-builder-gen/           # JSR-269 annotation processor (compile-time only)
 │   ├── pom.xml (parent: aether; no inline versions)
-│   └── src/main/resources/templates/   # FreeMarker builder templates (*.ftl)
+│   └── src/main/resources/templates/   # FreeMarker builder templates (*.java.ftl)
 └── aether-runtime/               # MVP: thin runtime dependency aggregator; future: persistence (OSGi-ready bundle)
     └── pom.xml (parent: aether; no inline versions)
 ```
@@ -129,7 +129,7 @@ public record SafeDto(@Nullable String notes) {}
   - Register the annotation processor via `@Jsr269Processor`.
   - Discover `@AetherRecord` records and their component annotations.
 - Uses **FreeMarker** (`org.freemarker:freemarker:2.3.34`) to render builder source from templates:
-  - Templates live in `aether-builder-gen/src/main/resources/templates/` (e.g. `Builder.ftl`).
+  - Templates live in `aether-builder-gen/src/main/resources/templates/` (e.g. `Builder.java.ftl`).
   - The processor builds a template model (`RecordComponentModel` list, package name, record name) and writes output via `Filer`.
   - FreeMarker is a **compile-time-only** dependency; it is not on the consumer classpath.
 
@@ -347,7 +347,7 @@ Resolved during planning (2026-07):
 2. **Scaffold Maven modules** (`aether-api`, `aether-builder-gen`, `aether-runtime`) (complete).
 3. **Implement JSR-269 processor** (`aether-builder-gen`) to generate builders for `@AetherRecord` records (complete).
 4. **Centralize dependency versions** — move all external (and internal) dependency versions to root `pom.xml` `dependencyManagement`; remove inline versions from child modules and processor paths (complete).
-5. **Refactor codegen to FreeMarker** — replace inline `StringBuilder` generation with `Builder.ftl` and template model rendering (complete).
+5. **Refactor codegen to FreeMarker** — replace inline `StringBuilder` generation with `Builder.java.ftl` and template model rendering (complete).
 6. **Add unit tests** for generated builder logic (e.g., null rejection, regex validation, unmarked records ignored) (complete).
 7. **Document usage examples** in `README.md` (complete).
 8. After MVP: Add nested/collection support, custom annotations, and OSGi bundle packaging.
@@ -454,7 +454,7 @@ public @interface RegexMatch { String pattern(); }
 ### FreeMarker Builder Template (excerpt)
 
 ```ftl
-<#-- aether-builder-gen/src/main/resources/templates/Builder.ftl (excerpt) -->
+<#-- aether-builder-gen/src/main/resources/templates/Builder.java.ftl (excerpt) -->
 public final class ${builderName} implements AetherBuilder<${recordName}><#if viewInterfaces?has_content>, ...</#if> {
 <#list components as c>
     public ${c.typeName} ${c.name}() { return ${c.name}; }

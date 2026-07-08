@@ -55,12 +55,12 @@ public final class ${builderName} implements AetherBuilder<${recordName}><#if vi
             errors.add("Field '${c.name}' must not be null");
         }<#if c.string && c.hasStringConstraints()> else {
             <#assign indent = "            ">
-            <#include "validation.ftl">
+            <#include "validation.java.ftl">
         }</#if>
     <#elseif c.string && c.hasStringConstraints()>
         if (${c.name} != null) {
             <#assign indent = "            ">
-            <#include "validation.ftl">
+            <#include "validation.java.ftl">
         }
     </#if>
 

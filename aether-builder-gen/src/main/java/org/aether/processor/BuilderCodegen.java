@@ -42,7 +42,7 @@ final class BuilderCodegen {
             final List<InterfaceViewModel> viewInterfaces,
             final ExceptionalListener onError) {
         return ExceptionalSupplier.of(() -> {
-            final Template template = CONFIGURATION.getTemplate("Builder.ftl");
+            final Template template = CONFIGURATION.getTemplate("Builder.java.ftl");
             final Map<String, Object> model = new HashMap<>();
             model.put("packageName", packageName);
             model.put("recordName", recordSimpleName);
