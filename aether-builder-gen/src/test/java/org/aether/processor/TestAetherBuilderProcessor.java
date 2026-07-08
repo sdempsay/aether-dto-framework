@@ -139,6 +139,7 @@ public class TestAetherBuilderProcessor {
         compileFixtures("RegexDto.java");
 
         final String source = readFile(outputDir.resolve("fixtures/RegexDtoBuilder.java").toFile()).response();
+        assertTrue(source.contains("import java.util.regex.Pattern;"), "Regex builders must import Pattern");
         assertTrue(
                 source.contains("private static final Pattern CODE_PATTERN = Pattern.compile(\"\\\\d{3}\")"),
                 "Regex pattern should be escaped for a valid Java string literal");
