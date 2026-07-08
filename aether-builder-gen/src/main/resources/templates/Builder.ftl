@@ -17,6 +17,11 @@ import ${v.qualifiedName};
 
 public final class ${builderName} implements AetherBuilder<${recordName}><#if viewInterfaces?has_content>, <#list viewInterfaces as v>${v.simpleName}<#sep>, </#list></#if> {
 <#list components as c>
+<#if c.hasRegex()>
+    private static final Pattern ${c.name?upper_case}_PATTERN = Pattern.compile("${c.regexPattern?js_string}");
+</#if>
+</#list>
+<#list components as c>
     private ${c.typeName} ${c.name};
 
 </#list>

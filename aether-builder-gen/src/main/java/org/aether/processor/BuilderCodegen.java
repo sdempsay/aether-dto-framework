@@ -1,14 +1,16 @@
 package org.aether.processor;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.dempsay.utils.exceptional.api.ExceptionalListener;
+import org.dempsay.utils.exceptional.api.ExceptionalResponse;
+import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
+
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 
 /**
@@ -30,27 +32,29 @@ final class BuilderCodegen {
      * @param recordSimpleName simple name of the annotated record
      * @param components record component metadata
      * @param viewInterfaces interfaces the generated builder should implement
-     * @return generated Java source
-     * @throws IOException when the template cannot be read
-     * @throws TemplateException when template evaluation fails
+     * @param onError invoked when template loading or rendering fails
+     * @return generated Java source, or failure when template loading or rendering fails
      */
-    static String render(
+    static ExceptionalResponse<String> render(
             final String packageName,
             final String recordSimpleName,
             final List<RecordComponentModel> components,
-            final List<InterfaceViewModel> viewInterfaces) throws IOException, TemplateException {
-        final Template template = CONFIGURATION.getTemplate("Builder.ftl");
-        final Map<String, Object> model = new HashMap<>();
-        model.put("packageName", packageName);
-        model.put("recordName", recordSimpleName);
-        model.put("builderName", recordSimpleName + "Builder");
-        model.put("components", components);
-        model.put("viewInterfaces", viewInterfaces.stream().map(BuilderCodegen::toTemplateModel).toList());
-        model.put("needsPattern", components.stream().anyMatch(RecordComponentModel::hasRegex));
+            final List<InterfaceViewModel> viewInterfaces,
+            final ExceptionalListener onError) {
+        return ExceptionalSupplier.of(() -> {
+            final Template template = CONFIGURATION.getTemplate("Builder.ftl");
+            final Map<String, Object> model = new HashMap<>();
+            model.put("packageName", packageName);
+            model.put("recordName", recordSimpleName);
+            model.put("builderName", recordSimpleName + "Builder");
+            model.put("components", components);
+            model.put("viewInterfaces", viewInterfaces.stream().map(BuilderCodegen::toTemplateModel).toList());
+            model.put("needsPattern", components.stream().anyMatch(RecordComponentModel::hasRegex));
 
-        final StringWriter output = new StringWriter();
-        template.process(model, output);
-        return output.toString();
+            final StringWriter output = new StringWriter();
+            template.process(model, output);
+            return output.toString();
+        }).with(onError).execute();
     }
 
     /**

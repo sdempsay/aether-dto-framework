@@ -27,6 +27,8 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import org.aether.validation.ValidationException;
+import org.dempsay.utils.exceptional.api.ExceptionalResource;
+import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,13 +50,14 @@ public class TestAetherBuilderProcessor {
         final File builderFile = outputDir.resolve("fixtures/MyDtoBuilder.java").toFile();
         assertTrue(builderFile.exists(), "Builder source should be generated");
 
-        final String source = readFile(builderFile);
+        final String source = readFile(builderFile).response();
         assertTrue(source.contains("public final class MyDtoBuilder implements AetherBuilder<MyDto>"));
         assertTrue(source.contains("public String data()"));
         assertTrue(source.contains("@Override"));
         assertTrue(source.contains("Field 'data' must not be null"));
         assertTrue(source.contains("length must be between 3 and 50"));
-        assertTrue(source.contains("Pattern.matches"));
+        assertTrue(source.contains("private static final Pattern DATA_PATTERN = Pattern.compile"));
+        assertTrue(source.contains("DATA_PATTERN.matcher(data).matches()"));
     }
 
     @Test
@@ -106,7 +109,7 @@ public class TestAetherBuilderProcessor {
         final File builderFile = outputDir.resolve("fixtures/NamedDtoBuilder.java").toFile();
         assertTrue(builderFile.exists(), "Builder source should be generated");
 
-        final String source = readFile(builderFile);
+        final String source = readFile(builderFile).response();
         assertTrue(source.contains("implements AetherBuilder<NamedDto>, Named"));
         assertTrue(source.contains("public String name()"));
         assertTrue(source.contains("collectValidationErrors()"));
@@ -129,6 +132,36 @@ public class TestAetherBuilderProcessor {
         builderClass.getMethod("name", String.class).invoke(builder, "alice");
         assertEquals("alice", builderClass.getMethod("name").invoke(builder));
         assertEquals("alice", namedInterface.getMethod("name").invoke(builder));
+    }
+
+    @Test
+    public void escapesRegexPatternForGeneratedJava() throws Exception {
+        compileFixtures("RegexDto.java");
+
+        final String source = readFile(outputDir.resolve("fixtures/RegexDtoBuilder.java").toFile()).response();
+        assertTrue(
+                source.contains("private static final Pattern CODE_PATTERN = Pattern.compile(\"\\\\d{3}\")"),
+                "Regex pattern should be escaped for a valid Java string literal");
+        assertTrue(source.contains("CODE_PATTERN.matcher(code).matches()"));
+    }
+
+    @Test
+    public void validatesRegexAtRuntime() throws Exception {
+        compileAndLoad("RegexDto.java");
+
+        final Class<?> builderClass = Class.forName("fixtures.RegexDtoBuilder", true, testClassLoader());
+        final Object builder = builderClass.getConstructor().newInstance();
+        final AtomicReference<Exception> captured = new AtomicReference<>();
+
+        builderClass.getMethod("code", String.class).invoke(builder, "12");
+        assertTrue(wasError(invokeBuild(builder, captured)), "Too few digits should fail regex");
+
+        builderClass.getMethod("code", String.class).invoke(builder, "123");
+        captured.set(null);
+        final Object success = invokeBuild(builder, captured);
+        assertFalse(wasError(success));
+        final Object dto = success.getClass().getMethod("response").invoke(success);
+        assertEquals("123", dto.getClass().getMethod("code").invoke(dto));
     }
 
     @Test
@@ -228,9 +261,10 @@ public class TestAetherBuilderProcessor {
         return new File(repoPath).getAbsolutePath();
     }
 
-    private static String readFile(final File file) throws Exception {
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            return reader.lines().collect(Collectors.joining(System.lineSeparator()));
-        }
+    private static ExceptionalResponse<String> readFile(final File file) {
+        return ExceptionalResource.of(
+                () -> new BufferedReader(new FileReader(file)),
+                reader -> reader.lines().collect(Collectors.joining(System.lineSeparator())))
+                .execute();
     }
 }

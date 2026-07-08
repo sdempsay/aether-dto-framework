@@ -37,6 +37,7 @@ import org.aether.annotations.MinLength;
 import org.aether.annotations.Nullable;
 import org.aether.annotations.RegexMatch;
 import org.dempsay.support.jsr269.annotation.Jsr269Processor;
+import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResourceAction;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
@@ -328,28 +329,48 @@ public class AetherBuilderProcessor extends AbstractProcessor {
         final String packageName = elements.getPackageOf(record).getQualifiedName().toString();
         final String recordSimpleName = record.getSimpleName().toString();
 
-        final ExceptionalResponse<String> rendered = ExceptionalSupplier
-                .of(() -> BuilderCodegen.render(packageName, recordSimpleName, components, viewInterfaces))
-                .with(e -> error(record, "Failed to generate builder: " + e.getMessage()))
-                .execute();
+        final ExceptionalResponse<String> rendered = BuilderCodegen.render(
+                packageName,
+                recordSimpleName,
+                components,
+                viewInterfaces,
+                e -> error(record, "Failed to generate builder: " + e.getMessage()));
 
         if (rendered.wasNoError()) {
-            ExceptionalResourceAction
-                    .of(
-                            () -> openWriter(record, packageName, recordSimpleName),
-                            writer -> writer.write(rendered.response()))
-                    .with(e -> error(record, "Failed to write builder: " + e.getMessage()))
-                    .execute();
+            final ExceptionalResponse<Writer> writerResponse = openWriter(
+                    record,
+                    packageName,
+                    recordSimpleName,
+                    e -> error(record, "Failed to open builder writer: " + e.getMessage()));
+
+            if (writerResponse.wasNoError()) {
+                ExceptionalResourceAction
+                        .of(() -> writerResponse.response(), writer -> writer.write(rendered.response()))
+                        .with(e -> error(record, "Failed to write builder: " + e.getMessage()))
+                        .execute();
+            }
         }
     }
 
-    private Writer openWriter(
+    /**
+     * Opens a source file writer for the generated builder.
+     *
+     * @param record the annotated record element
+     * @param packageName target package for the generated builder
+     * @param recordSimpleName simple name of the annotated record
+     * @param onError invoked when the source file cannot be created
+     * @return the filer writer, or failure when the source file cannot be created
+     */
+    private ExceptionalResponse<Writer> openWriter(
             final TypeElement record,
             final String packageName,
-            final String recordSimpleName) throws Exception {
-        final JavaFileObject sourceFile = filer.createSourceFile(
-                packageName + "." + recordSimpleName + "Builder", record);
-        return sourceFile.openWriter();
+            final String recordSimpleName,
+            final ExceptionalListener onError) {
+        return ExceptionalSupplier.of(() -> {
+            final JavaFileObject sourceFile = filer.createSourceFile(
+                    packageName + "." + recordSimpleName + "Builder", record);
+            return sourceFile.openWriter();
+        }).with(onError).execute();
     }
 
     private void error(final Element element, final String message) {
