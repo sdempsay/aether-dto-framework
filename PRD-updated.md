@@ -196,13 +196,14 @@ Rationale: UUID-by-default is safe; optional natural/string keys remain availabl
 #### `AetherFailure` (enum) + `AetherException` (or `AetherStoreException`)
 
 ```java
+// Enum constants use PascalCase (not SCREAMING_SNAKE) — project preference.
 public enum AetherFailure {
-    VALIDATION,   // ~400 — domain/constraint problems (may wrap ValidationException)
-    NOT_FOUND,    // ~404 — missing resource; also unauthorized read/update/delete (hide existence)
-    CONFLICT,     // ~409 — duplicate id, unique violation, version mismatch, singleton already exists
-    IDENTITY,     // ~400 — path id vs body id mismatch (if applicable)
-    FORBIDDEN,    // ~403 — optional explicit deny (e.g. create when type not allowed); prefer NOT_FOUND for read paths
-    INTERNAL      // ~500 — backend I/O, unexpected
+    Validation,   // ~400 — domain/constraint problems (may wrap ValidationException)
+    NotFound,     // ~404 — missing resource; also unauthorized read/update/delete (hide existence)
+    Conflict,     // ~409 — duplicate id, unique violation, version mismatch, singleton already exists
+    Identity,     // ~400 — path id vs body id mismatch (if applicable)
+    Forbidden,    // ~403 — optional explicit deny (e.g. create when type not allowed); prefer NotFound for read paths
+    Internal      // ~500 — backend I/O, unexpected
 }
 
 public class AetherException extends RuntimeException {
