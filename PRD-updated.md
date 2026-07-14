@@ -95,6 +95,16 @@ public interface AetherPersisted<T> {
 Create / read / update return `ExceptionalResponse<AetherPersisted<T>>`.  
 Delete returns `ExceptionalResponse<Void>` (or equivalent empty success).
 
+#### API parameter order (mandatory for store / new multi-arg APIs)
+
+1. **`ExceptionalListener onError` is always the first parameter.**
+2. Remaining fixed parameters follow.
+3. **Varargs**, if any, are always last.
+
+Rationale: trailing `onError` fights future varargs overloads; leading `onError` stays stable when optional tails grow.
+
+Note: existing `AetherBuilder.build(ExceptionalListener)` is already single-arg. New persistence ports follow the first-parameter rule even when there is no varargs yet.
+
 #### Update options
 
 ```java
@@ -121,12 +131,12 @@ public interface AetherResourceStore<T, K> {
      * fails with conflict if that id already exists.
      */
     ExceptionalResponse<AetherPersisted<T>> create(
+        ExceptionalListener onError,
         T resource,
-        Optional<K> preferredId,
-        ExceptionalListener onError);
+        Optional<K> preferredId);
 
     /** GET by id — not found if missing. */
-    ExceptionalResponse<AetherPersisted<T>> read(K id, ExceptionalListener onError);
+    ExceptionalResponse<AetherPersisted<T>> read(ExceptionalListener onError, K id);
 
     /**
      * PUT — full replace of resource at id.
@@ -135,21 +145,21 @@ public interface AetherResourceStore<T, K> {
      * Path id is authoritative; if resource later embeds id, mismatch → identity error.
      */
     ExceptionalResponse<AetherPersisted<T>> update(
+        ExceptionalListener onError,
         K id,
         T resource,
         String expectedVersion,
-        UpdateOptions options,
-        ExceptionalListener onError);
+        UpdateOptions options);
 
     /**
      * DELETE — remove at id.
      * Idempotent: missing id → success.
      */
-    ExceptionalResponse<Void> delete(K id, ExceptionalListener onError);
+    ExceptionalResponse<Void> delete(ExceptionalListener onError, K id);
 }
 ```
 
-Convenience overloads (e.g. `create(T, onError)` → no preferred id) are fine.
+Convenience overloads (e.g. `create(onError, resource)` → no preferred id) are fine; `onError` stays first.
 
 ### Identity policy (multi-resource create)
 
@@ -250,15 +260,15 @@ public record AppConfigDto(
  */
 public interface AetherSingletonStore<T> {
 
-    ExceptionalResponse<AetherPersisted<T>> create(T resource, ExceptionalListener onError);
+    ExceptionalResponse<AetherPersisted<T>> create(ExceptionalListener onError, T resource);
 
     ExceptionalResponse<AetherPersisted<T>> read(ExceptionalListener onError);
 
     ExceptionalResponse<AetherPersisted<T>> update(
+        ExceptionalListener onError,
         T resource,
         String expectedVersion,
-        UpdateOptions options,
-        ExceptionalListener onError);
+        UpdateOptions options);
 
     ExceptionalResponse<Void> delete(ExceptionalListener onError);
 }

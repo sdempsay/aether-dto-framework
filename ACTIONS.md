@@ -1,5 +1,9 @@
 # Actions log
 
+## 2026-07-14 — Store API: ExceptionalListener first
+
+- Convention: `onError` is always the first parameter on store/new multi-arg APIs (varargs last). Documented in `PRD-updated.md`.
+
 ## 2026-07-14 — High-level goal: testable without infrastructure
 
 - Called out in `PRD.md` (executive summary, core principles, anti-goals), `PRD-updated.md`, `README.md`, `AGENTS.md`: app unit tests must not require a live DB/document server; ports + swappable providers/AAA.
