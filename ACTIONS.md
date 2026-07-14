@@ -1,5 +1,12 @@
 # Actions log
 
+## 2026-07-14 — CRUD interfaces + in-memory store (T6 slice 1)
+
+- Added `aether-api` store ports: `AetherResourceStore`, `AetherSingletonStore`, envelope/metadata, `UpdateOptions`, `AetherAck`.
+- `AetherFailure` (PascalCase + httpStatus), `AetherException`, `AetherResponses`; `AetherPrincipal`.
+- Optional `AbstractAetherResourceStore`; `InMemoryAetherResourceStore` / `InMemoryAetherSingletonStore` for tests.
+- Unit tests (12) green; no FS provider yet (later `aether-store-fs`).
+
 ## 2026-07-14 — CRUD pre-flight API freezes
 
 - Principal on all store methods (audit + AAA); String keys only; preferred id via create overload; first PR = interfaces + in-memory fake.
