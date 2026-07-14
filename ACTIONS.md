@@ -1,5 +1,9 @@
 # Actions log
 
+## 2026-07-14 — CRUD pre-flight API freezes
+
+- Principal on all store methods (audit + AAA); String keys only; preferred id via create overload; first PR = interfaces + in-memory fake.
+
 ## 2026-07-14 — AetherFailure for HTTP-mappable errors
 
 - Documented `AetherFailure` enum + `AetherException` on the exceptional listener path (no ExceptionalResponse subclass). Host maps enum → HTTP status later.

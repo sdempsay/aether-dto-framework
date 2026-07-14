@@ -77,11 +77,14 @@ public interface AetherResourceMetadata {
     Instant createdAt();
     Instant updatedAt();
     String version();   // opaque etag; see Versioning
+    // Actor fields populated from AetherPrincipal on write (exact naming TBD):
+    // String createdBy();  String updatedBy();
 }
 ```
 
-- **Only the store** writes metadata. Clients never supply trusted `createdAt` / `updatedAt` / `version`.
-- **`id`** is store-authoritative after create. Optional **preferred id** on multi-resource create is a *create input*, not client-authored metadata after the fact.
+- **Only the store** writes metadata. Clients never supply trusted timestamps / version / actor fields.
+- **`id`** is store-authoritative after create. Optional **preferred id** on multi-resource create is a *create input* overload, not client-authored metadata after the fact.
+- **Principal on every method** supplies actor for `createdBy` / `updatedBy` (and AAA when a checking decorator is used).
 
 #### Envelope
 
@@ -98,12 +101,15 @@ Delete returns `ExceptionalResponse<Void>` (or equivalent empty success).
 #### API parameter order (mandatory for store / new multi-arg APIs)
 
 1. **`ExceptionalListener onError` is always the first parameter.**
-2. Remaining fixed parameters follow.
-3. **Varargs**, if any, are always last.
+2. **`AetherPrincipal principal` is second** on all store methods (create/read/update/delete), including singleton — supports AAA **and** audit fields such as createdBy/updatedBy when present in metadata.
+3. Remaining fixed parameters follow.
+4. **Varargs**, if any, are always last.
 
-Rationale: trailing `onError` fights future varargs overloads; leading `onError` stays stable when optional tails grow.
+Rationale: trailing `onError` fights future varargs overloads; leading `onError` stays stable when optional tails grow. Principal on every method avoids “store never sees actor” for metadata.
 
 Note: existing `AetherBuilder.build(ExceptionalListener)` is already single-arg. New persistence ports follow the first-parameter rule even when there is no varargs yet.
+
+ACL may still be enforced by a **decorating** store that checks then delegates; the **port** always threads principal so providers can record audit metadata.
 
 #### Update options
 
@@ -119,34 +125,45 @@ public final class UpdateOptions {
 
 ```java
 /**
- * CRUD store for a resource type {@code T} with key {@code K} (typically String id).
+ * CRUD store for a resource type {@code T}.
+ * v1 key type is always String (UUID or preferred string id).
  * Semantics parallel HTTP collection resources.
+ *
+ * Parameter order: onError, principal, then operation args.
  */
-public interface AetherResourceStore<T, K> {
+public interface AetherResourceStore<T> {
+
+    /** POST — store assigns random UUID string as id. */
+    ExceptionalResponse<AetherPersisted<T>> create(
+        ExceptionalListener onError,
+        AetherPrincipal principal,
+        T resource);
 
     /**
-     * POST — create.
-     * If preferredId is empty/absent: store assigns a random UUID string as id.
-     * If preferredId is present: store validates (e.g. string width/length) and uses it;
-     * fails with conflict if that id already exists.
+     * POST — use preferredId after validation (e.g. width/length);
+     * conflict if that id already exists.
      */
     ExceptionalResponse<AetherPersisted<T>> create(
         ExceptionalListener onError,
+        AetherPrincipal principal,
         T resource,
-        Optional<K> preferredId);
+        String preferredId);
 
     /** GET by id — not found if missing. */
-    ExceptionalResponse<AetherPersisted<T>> read(ExceptionalListener onError, K id);
+    ExceptionalResponse<AetherPersisted<T>> read(
+        ExceptionalListener onError,
+        AetherPrincipal principal,
+        String id);
 
     /**
      * PUT — full replace of resource at id.
      * {@code expectedVersion} is required (from last read). Mismatch → conflict.
      * If missing and createIfAbsent: create at id; else not found.
-     * Path id is authoritative; if resource later embeds id, mismatch → identity error.
      */
     ExceptionalResponse<AetherPersisted<T>> update(
         ExceptionalListener onError,
-        K id,
+        AetherPrincipal principal,
+        String id,
         T resource,
         String expectedVersion,
         UpdateOptions options);
@@ -155,11 +172,14 @@ public interface AetherResourceStore<T, K> {
      * DELETE — remove at id.
      * Idempotent: missing id → success.
      */
-    ExceptionalResponse<Void> delete(ExceptionalListener onError, K id);
+    ExceptionalResponse<Void> delete(
+        ExceptionalListener onError,
+        AetherPrincipal principal,
+        String id);
 }
 ```
 
-Convenience overloads (e.g. `create(onError, resource)` → no preferred id) are fine; `onError` stays first.
+Preferred id is a **second overload**, not `Optional`.
 
 ### Identity policy (multi-resource create)
 
@@ -307,17 +327,25 @@ public record AppConfigDto(
  */
 public interface AetherSingletonStore<T> {
 
-    ExceptionalResponse<AetherPersisted<T>> create(ExceptionalListener onError, T resource);
+    ExceptionalResponse<AetherPersisted<T>> create(
+        ExceptionalListener onError,
+        AetherPrincipal principal,
+        T resource);
 
-    ExceptionalResponse<AetherPersisted<T>> read(ExceptionalListener onError);
+    ExceptionalResponse<AetherPersisted<T>> read(
+        ExceptionalListener onError,
+        AetherPrincipal principal);
 
     ExceptionalResponse<AetherPersisted<T>> update(
         ExceptionalListener onError,
+        AetherPrincipal principal,
         T resource,
         String expectedVersion,
         UpdateOptions options);
 
-    ExceptionalResponse<Void> delete(ExceptionalListener onError);
+    ExceptionalResponse<Void> delete(
+        ExceptionalListener onError,
+        AetherPrincipal principal);
 }
 ```
 
@@ -378,13 +406,18 @@ Providers implement the same interfaces; they never depend on each other. OSGi l
 
 ### Implementation slices (suggested)
 
-1. **API contracts** in `aether-api` (interfaces, metadata, annotations, exceptions; access SPI as designed).
-2. **New module `aether-store-fs`** — FS JSON `AetherResourceStore` for flat DTOs (UUID id + preferred string id, version checks, idempotent delete).
-3. **Unique indexes** for `@Unique` groups (in `aether-store-fs`).
-4. **`@Singleton` + `AetherSingletonStore`** FS implementation (same module).
-5. Tests for concurrency conflict, createIfAbsent, idempotent delete, unique violations.
-6. Document consumer deps in README (`aether-store-fs` vs `aether-runtime`).
-7. Later: **`aether-store-jdbc`** (or other) as a **separate** module behind the same interfaces — never fold into `aether-store-fs` or `aether-runtime`.
+1. **First PR — interfaces + in-memory fake** (`aether-api` and/or tiny test-facing module):  
+   - `AetherResourceStore` / `AetherSingletonStore`, envelope, metadata (incl. actor fields as designed)  
+   - `AetherFailure` / `AetherException` / helpers, `UpdateOptions`  
+   - `AetherPrincipal` on all methods  
+   - **In-memory** store implementation for unit tests (proves testability without infra)  
+   - Not FS; not OAuth  
+2. **New module `aether-store-fs`** — FS JSON multi-resource CRUD.  
+3. **Unique indexes** for `@Unique` groups (in `aether-store-fs`).  
+4. **Singleton** FS implementation.  
+5. Checking decorator / `AetherAccessControl` if not already thin-stubbed.  
+6. Docs: consumer deps (`aether-store-fs` vs `aether-runtime` vs in-memory for tests).  
+7. Later: **`aether-store-jdbc`** as its own module.
 
 ### Key decisions (summary)
 
@@ -404,6 +437,10 @@ Providers implement the same interfaces; they never depend on each other. OSGi l
 | First backend | Filesystem, one JSON file per id under `{root}/{type}/` |
 | Provider packaging | **One module/JAR/bundle per persistence provider**; `aether-runtime` stays DTO aggregator only |
 | Typed failures | `AetherFailure` (PascalCase + `httpStatus()` metadata) + `AetherException` on the listener |
+| Principal | On **all** store methods (after `onError`); enables AAA + createdBy/updatedBy |
+| Key type v1 | **String only** |
+| Preferred id | **Second create overload**, not `Optional` |
+| First PR | Interfaces + **in-memory fake store** (no FS yet) |
 
 ### Open for implementation detail (non-blocking)
 
