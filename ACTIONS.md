@@ -1,5 +1,10 @@
 # Actions log
 
+## 2026-07-08 — Seed post-MVP GitHub issues
+
+- Opened issues #1–#6 (nested DTOs, collections, custom annotations, OSGi, runtime persistence, type-level validation).
+- Wired `TODO.md` rows T2–T7 to issue links.
+
 ## 2026-07-08 — Hybrid backlog (GitHub Issues + TODO.md)
 
 - Mirrored review-pipeline backlog convention in `AGENTS.md` / `TODO.md` / `PRD-updated.md`.

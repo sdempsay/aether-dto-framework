@@ -10,8 +10,13 @@ Task tracker for Aether (`PRD.md`).
 |----|------|--------|-------|
 | T1 | Rename FreeMarker templates that generate Java to `*.java.ftl` and update references | complete | — |
 
-## Future / backlog
+## Future / backlog (post-MVP)
 
 | ID | Task | Status | Issue |
 |----|------|--------|-------|
-| — | (none yet — open a GitHub issue and add a row when work is accepted) | — | — |
+| T2 | Nested `@AetherRecord` components in generated builders | pending | [#1](https://github.com/sdempsay/aether-dto-framework/issues/1) |
+| T3 | Collection components (`List` and related) on `@AetherRecord` DTOs | pending | [#2](https://github.com/sdempsay/aether-dto-framework/issues/2) |
+| T4 | Extensible / custom validation annotations beyond MVP set | pending | [#3](https://github.com/sdempsay/aether-dto-framework/issues/3) |
+| T5 | OSGi bundle packaging for aether modules | pending | [#4](https://github.com/sdempsay/aether-dto-framework/issues/4) |
+| T6 | `aether-runtime`: persistence / direct DB binding | pending | [#5](https://github.com/sdempsay/aether-dto-framework/issues/5) |
+| T7 | Type-level validation annotations (deferred from MVP design) | pending | [#6](https://github.com/sdempsay/aether-dto-framework/issues/6) |
