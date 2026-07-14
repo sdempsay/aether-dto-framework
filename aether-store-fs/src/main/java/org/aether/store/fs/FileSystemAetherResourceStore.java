@@ -26,9 +26,10 @@ import org.aether.store.fs.StoredDocument.StoredMetadata;
 import org.aether.store.unique.UniqueConstraintModel;
 import org.aether.store.unique.UniqueIndexTable;
 import org.aether.store.unique.UniqueKey;
+import org.aether.failure.AetherException;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
+import org.dempsay.utils.exceptional.api.ExceptionalResource;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
-import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
 
 /**
  * Filesystem JSON {@link org.aether.store.AetherResourceStore} using Gson.
@@ -309,38 +310,40 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
         if (uniqueIndexLoaded) {
             return ExceptionalResponse.success(AetherAck.INSTANCE);
         }
-        final ExceptionalResponse<AetherAck> rebuilt = rebuildUniqueIndex();
+        final ExceptionalResponse<AetherAck> rebuilt = rebuildUniqueIndex(onError);
         if (rebuilt.wasError()) {
-            return AetherResponses.fail(
-                    onError,
-                    AetherFailure.Internal,
-                    "Failed to rebuild unique index under " + typeDirectory);
+            // Listener already received AetherException from rebuild.
+            return ExceptionalResponse.failure();
         }
         uniqueIndexLoaded = true;
         return ExceptionalResponse.success(AetherAck.INSTANCE);
     }
 
-    private ExceptionalResponse<AetherAck> rebuildUniqueIndex() {
-        return ExceptionalSupplier.of(() -> {
-            if (!Files.isDirectory(typeDirectory)) {
-                return AetherAck.INSTANCE;
-            }
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(typeDirectory, "*.json")) {
-                for (final Path path : stream) {
-                    final ExceptionalResponse<AetherPersisted<T>> persisted = readPersistedQuiet(path);
-                    if (persisted.wasError()) {
-                        throw new IllegalStateException("Failed to read " + path);
+    private ExceptionalResponse<AetherAck> rebuildUniqueIndex(final ExceptionalListener onError) {
+        if (!Files.isDirectory(typeDirectory)) {
+            return ExceptionalResponse.success(AetherAck.INSTANCE);
+        }
+        return ExceptionalResource.<DirectoryStream<Path>, AetherAck>of(
+                () -> Files.newDirectoryStream(typeDirectory, "*.json"),
+                stream -> {
+                    for (final Path path : stream) {
+                        final ExceptionalResponse<AetherPersisted<T>> persisted = readPersistedQuiet(path);
+                        if (persisted.wasError()) {
+                            throw new AetherException(
+                                    AetherFailure.NotFound,
+                                    "Failed to read document during index rebuild: " + path.getFileName());
+                        }
+                        final ExceptionalResponse<List<UniqueKey>> keys =
+                                uniqueModel.keysOf(persisted.response().resource());
+                        if (keys.wasError()) {
+                            throw new AetherException(
+                                    AetherFailure.Internal,
+                                    "Failed to extract unique keys from: " + path.getFileName());
+                        }
+                        uniqueIndex.tryClaim(persisted.response().metadata().id(), keys.response());
                     }
-                    final ExceptionalResponse<List<UniqueKey>> keys =
-                            uniqueModel.keysOf(persisted.response().resource());
-                    if (keys.wasError()) {
-                        throw new IllegalStateException("Failed to extract unique keys from " + path);
-                    }
-                    uniqueIndex.tryClaim(persisted.response().metadata().id(), keys.response());
-                }
-            }
-            return AetherAck.INSTANCE;
-        }).execute();
+                    return AetherAck.INSTANCE;
+                }).with(onError).execute();
     }
 
     private ExceptionalResponse<AetherPersisted<T>> readPersisted(
@@ -348,7 +351,10 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
             final Path path) {
         final ExceptionalResponse<AetherPersisted<T>> read = readPersistedQuiet(path);
         if (read.wasError()) {
-            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read: " + path.getFileName());
+            return AetherResponses.fail(
+                    onError,
+                    AetherFailure.NotFound,
+                    "Failed to read: " + path.getFileName());
         }
         return read;
     }

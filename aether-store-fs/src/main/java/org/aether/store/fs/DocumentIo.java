@@ -1,7 +1,5 @@
 package org.aether.store.fs;
 
-import java.io.Reader;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
@@ -11,13 +9,17 @@ import java.nio.file.StandardOpenOption;
 
 import com.google.gson.Gson;
 
+import org.aether.failure.AetherException;
+import org.aether.failure.AetherFailure;
 import org.aether.store.AetherAck;
 import org.aether.store.fs.StoredDocument.StoredMetadata;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
+import org.dempsay.utils.exceptional.api.ExceptionalResource;
+import org.dempsay.utils.exceptional.api.ExceptionalResourceAction;
 import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
 
 /**
- * Atomic JSON document read/write helpers (exceptional I/O).
+ * Atomic JSON document read/write helpers using exceptional resource patterns.
  *
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0
@@ -29,25 +31,33 @@ final class DocumentIo {
         this.gson = gson;
     }
 
+    /**
+     * Reads a stored document. Callers map failure to {@code AetherFailure.NotFound}
+     * (or Internal) for the store listener.
+     *
+     * @param path document path
+     * @return document or exceptional failure
+     */
     ExceptionalResponse<StoredDocument> read(final Path path) {
-        return ExceptionalSupplier.of(() -> {
-            try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-                return gson.fromJson(reader, StoredDocument.class);
-            }
-        }).execute();
+        return ExceptionalResource.of(
+                () -> Files.newBufferedReader(path, StandardCharsets.UTF_8),
+                reader -> gson.fromJson(reader, StoredDocument.class)).execute();
     }
 
     ExceptionalResponse<AetherAck> writeAtomic(final Path path, final StoredDocument document) {
         return ExceptionalSupplier.of(() -> {
             Files.createDirectories(path.getParent());
             final Path temp = path.resolveSibling(path.getFileName().toString() + ".tmp");
-            try (Writer writer = Files.newBufferedWriter(
-                    temp,
-                    StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE)) {
-                gson.toJson(document, writer);
+            final boolean wrote = ExceptionalResourceAction.of(
+                    () -> Files.newBufferedWriter(
+                            temp,
+                            StandardCharsets.UTF_8,
+                            StandardOpenOption.CREATE,
+                            StandardOpenOption.TRUNCATE_EXISTING,
+                            StandardOpenOption.WRITE),
+                    writer -> gson.toJson(document, writer)).execute();
+            if (!wrote) {
+                throw new AetherException(AetherFailure.Internal, "Failed to write temp document " + temp);
             }
             try {
                 Files.move(

@@ -207,7 +207,7 @@ public final class FileSystemAetherSingletonStore<T> implements AetherSingletonS
                             resource));
                 });
         if (read.wasError()) {
-            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read singleton");
+            return AetherResponses.fail(onError, AetherFailure.NotFound, "Failed to read singleton");
         }
         return read;
     }
