@@ -82,3 +82,4 @@ When reviewing or fixing exceptional compliance, scope checks to `src/main` and 
 - Generated builders implement `AetherBuilder<T>` and record view interfaces when compatible.
 - Run `mvn test` from the repo root to verify changes.
 - **Testability goal:** keep app-facing surface on API ports so consumers can unit-test with fakes (in-memory store, allow-all AAA) — never design so unit tests require a live DB/document server.
+- **JUnit:** dempsay-parent enables `junit-jupiter` when `src/test/resources/tests.md` exists — do not hand-add junit deps to module POMs; add that file instead.
