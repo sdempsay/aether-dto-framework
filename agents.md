@@ -57,11 +57,12 @@ Expectations:
 
 Aether uses [exceptional-java](https://github.com/sdempsay/exceptional-java) for explicit failure paths. See [WhyBeExceptional.md](https://github.com/sdempsay/exceptional-java/blob/master/WhyBeExceptional.md) and `PRD.md` Section 4 for rationale.
 
-**Production and main-source code** (`aether-api`, `aether-builder-gen/src/main`, generated builder templates):
+**Production and main-source code** (`aether-api`, `aether-builder-gen/src/main`, `aether-store-fs`, generated builder templates):
 
 - I/O and other failure-prone work returns `ExceptionalResponse<T>` or is executed through `ExceptionalSupplier`, `ExceptionalResource`, or `ExceptionalResourceAction`.
-- Do not add `throws` to method signatures for failure paths that should be exceptional.
+- Do not add `throws` to method signatures for failure paths that should be exceptional — **including private/package-private helpers** (`DocumentIo`, `readPersisted`, `writePersisted`, etc.). No adapter boundary: public `ExceptionalResponse` ports do not excuse `throws` or hand-written `try/catch` on filesystem helpers in the same module.
 - Checked exceptions may appear only inside lambdas passed to exceptional utilities (the library owns the catch).
+- When `code-review` flags exceptional violations on `aether-store-fs`, fix them with exceptional utilities end-to-end; do not document carve-outs for internal I/O.
 
 **Tests are an intentional exception.** `throws` on JUnit test methods and test helpers is fine and expected. Tests often use reflection, `javax.tools` compilation, temp directories, and other APIs that declare checked exceptions. Do not refactor test code to be fully exceptional unless there is a concrete benefit. Prefer `ExceptionalResource` / `ExceptionalSupplier` in test utilities only when it improves clarity, not as a blanket rule.
 
