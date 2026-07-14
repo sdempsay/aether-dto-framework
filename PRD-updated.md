@@ -179,7 +179,33 @@ public interface AetherResourceStore<T> {
 }
 ```
 
-Preferred id is a **second overload**, not `Optional`.
+Preferred id is a **second overload**, not `Optional`. Do **not** use null preferredId to mean “auto-generate.”
+
+#### Optional `AbstractAetherResourceStore<T>` (in `aether-api`)
+
+Providers **may** extend a skeletal base in the API module; they are **not** required to.
+
+| Responsibility | Where |
+|----------------|--------|
+| Public `create(onError, principal, resource)` | Base: mint id via injectable `Supplier<String>` (default UUID), then forward |
+| Public `create(..., preferredId)` | Base: reject null/blank → `Validation`; else `doCreate(...)` |
+| Actual insert + metadata | Provider: `protected abstract doCreate(...)` (or fully custom impl of the interface) |
+
+```java
+// Sketch — providers choose extend-or-not
+public abstract class AbstractAetherResourceStore<T> implements AetherResourceStore<T> {
+    // final create overloads → doCreate
+    protected abstract ExceptionalResponse<AetherPersisted<T>> doCreate(
+        ExceptionalListener onError,
+        AetherPrincipal principal,
+        T resource,
+        String id);
+}
+```
+
+- In-memory / FS can extend the abstract class to avoid duplicating overload plumbing.  
+- A provider that needs totally different create semantics implements `AetherResourceStore` directly.  
+- Same idea optional later for `AbstractAetherSingletonStore` if useful.
 
 ### Identity policy (multi-resource create)
 
@@ -441,6 +467,7 @@ Providers implement the same interfaces; they never depend on each other. OSGi l
 | Key type v1 | **String only** |
 | Preferred id | **Second create overload**, not `Optional` |
 | First PR | Interfaces + **in-memory fake store** (no FS yet) |
+| Create overloads | Two public methods; optional `AbstractAetherResourceStore` in api (providers may extend) |
 
 ### Open for implementation detail (non-blocking)
 

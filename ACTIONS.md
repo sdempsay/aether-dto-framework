@@ -3,6 +3,7 @@
 ## 2026-07-14 — CRUD pre-flight API freezes
 
 - Principal on all store methods (audit + AAA); String keys only; preferred id via create overload; first PR = interfaces + in-memory fake.
+- Optional `AbstractAetherResourceStore` in `aether-api` (create overloads → `doCreate`); providers may extend or implement the interface directly.
 
 ## 2026-07-14 — AetherFailure for HTTP-mappable errors
 
