@@ -42,9 +42,13 @@ aether/
 ├── aether-builder-gen/           # JSR-269 annotation processor (compile-time only)
 │   ├── pom.xml (parent: aether; no inline versions)
 │   └── src/main/resources/templates/   # FreeMarker builder templates (*.java.ftl)
-└── aether-runtime/               # MVP: thin runtime dependency aggregator; future: persistence (OSGi-ready bundle)
+├── aether-runtime/               # MVP: thin runtime dependency aggregator (api + exceptional); not store backends
+│   └── pom.xml (parent: aether; no inline versions)
+└── aether-store-*/               # Post-MVP: one Maven module/JAR per persistence provider (e.g. aether-store-fs)
     └── pom.xml (parent: aether; no inline versions)
 ```
+
+Persistence providers are **separate artifacts** (see `PRD-updated.md`): e.g. `aether-store-fs`, later `aether-store-jdbc`. Do not put multiple backends in `aether-runtime` or a single “kitchen sink” store JAR.
 
 ### Dependency management
 
@@ -264,7 +268,7 @@ public final class NamedDtoBuilder implements AetherBuilder<NamedDto>, Named {
 
 ### Persistence layer (post-MVP design)
 
-Agreed design for resource CRUD, metadata envelope, uniqueness, singleton types, and a filesystem JSON first backend is recorded in **`PRD-updated.md`** (section *Persistence layer design*) and tracked as [issue #5](https://github.com/sdempsay/aether-dto-framework/issues/5) / TODO **T6**. Summary: HTTP-like `create`/`read`/`update`/`delete`, store-owned `AetherResourceMetadata` (id, timestamps, random-UUID version etag required on update), `@Unique` field groups, `@Singleton` + id-free store API, first implementation as `{root}/{type}/{id}.json`.
+Agreed design for resource CRUD, metadata envelope, uniqueness, singleton types, and a filesystem JSON first backend is recorded in **`PRD-updated.md`** (section *Persistence layer design*) and tracked as [issue #5](https://github.com/sdempsay/aether-dto-framework/issues/5) / TODO **T6**. Summary: HTTP-like `create`/`read`/`update`/`delete`, store-owned `AetherResourceMetadata` (id, timestamps, random-UUID version etag required on update), `@Unique` field groups, `@Singleton` + id-free store API, first implementation as `{root}/{type}/{id}.json`. **One Maven module/JAR (future OSGi bundle) per persistence provider** (`aether-store-fs`, …); `aether-runtime` remains a DTO dependency aggregator only.
 
 ---
 

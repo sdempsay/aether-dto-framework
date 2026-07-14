@@ -1,5 +1,9 @@
 # Actions log
 
+## 2026-07-14 — One module per persistence provider
+
+- Locked: each store backend is its own Maven module/JAR (`aether-store-fs`, later `aether-store-jdbc`, …); `aether-runtime` does not embed providers. Documented in `PRD-updated.md` / `PRD.md`.
+
 ## 2026-07-14 — Wishlist issue: query/GraphQL after filtering
 
 - Opened [issue #7](https://github.com/sdempsay/aether-dto-framework/issues/7); TODO **T8** (`wishlist`) — revisit GraphQL / generic frontend query once filters exist.

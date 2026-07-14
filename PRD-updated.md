@@ -279,20 +279,46 @@ Root directory is configuration (constructor / config object), not a global sing
 
 ### Module placement (target)
 
-| Module | Contents |
-|--------|----------|
-| `aether-api` | `AetherResourceStore`, `AetherSingletonStore`, `AetherPersisted`, `AetherResourceMetadata`, `UpdateOptions`, `@Unique`, `@Singleton`, persistence exceptions; optional `@Id` if domain-side id documentation is needed |
-| `aether-runtime` | Filesystem JSON reference implementation; later other backends |
-| `aether-builder-gen` | Later: emit unique-group metadata, store helpers, key extraction without reflection |
+**Rule: one persistence provider per Maven module / JAR / (future) OSGi bundle.**  
+Consumers depend only on the provider(s) they use. Providers must not drag unrelated backends onto the classpath. Access-control decorator may live in `aether-api` (SPI + checking wrapper) or a tiny shared module — not inside a single provider.
+
+| Module | Artifact role | Contents |
+|--------|---------------|----------|
+| `aether-api` | Contracts | Annotations, builders API, `AetherResourceStore` / `AetherSingletonStore`, `AetherPersisted`, metadata, `@Unique` / `@Singleton`, persistence exceptions, `AetherPrincipal` / `AetherAccessControl` SPI + checking decorator (no I/O backend) |
+| `aether-builder-gen` | Compile-time only | JSR-269 + FreeMarker; later unique-group / store helper codegen |
+| `aether-runtime` | Thin consumer aggregator (current MVP) | Continues to re-export `aether-api` + exceptional for DTO users **without** requiring a store. Does **not** embed FS/JDBC implementations. |
+| `aether-store-fs` | **Provider** | Filesystem JSON store(s) only; depends on `aether-api` (+ Gson or chosen JSON lib as needed) |
+| `aether-store-jdbc` (later) | **Provider** | JDBC backend only; own transitive deps (driver not required if DataSource-injected) |
+| `aether-store-<name>` (later) | **Provider** | Any additional backend — **new module**, same pattern |
+
+```
+aether/
+├── aether-api/
+├── aether-builder-gen/
+├── aether-runtime/          # DTO runtime aggregator — not "all providers"
+├── aether-store-fs/         # first persistence provider
+└── aether-store-jdbc/       # example future provider
+```
+
+**Dependency direction**
+
+```text
+aether-store-*  →  aether-api
+app             →  aether-api + aether-store-fs   (and/or other providers)
+app             →  aether-runtime                (optional; DTOs only)
+```
+
+Providers implement the same interfaces; they never depend on each other. OSGi later: each `aether-store-*` is its own bundle with explicit package exports.
 
 ### Implementation slices (suggested)
 
-1. **API contracts** in `aether-api` (interfaces, metadata, annotations, exceptions).
-2. **FS JSON** `AetherResourceStore` for flat DTOs (UUID id + preferred string id, version checks, idempotent delete).
-3. **Unique indexes** for `@Unique` groups.
-4. **`@Singleton` + `AetherSingletonStore`** FS implementation.
+1. **API contracts** in `aether-api` (interfaces, metadata, annotations, exceptions; access SPI as designed).
+2. **New module `aether-store-fs`** — FS JSON `AetherResourceStore` for flat DTOs (UUID id + preferred string id, version checks, idempotent delete).
+3. **Unique indexes** for `@Unique` groups (in `aether-store-fs`).
+4. **`@Singleton` + `AetherSingletonStore`** FS implementation (same module).
 5. Tests for concurrency conflict, createIfAbsent, idempotent delete, unique violations.
-6. Document consumer usage in README; keep JDBC as a later backend behind the same interfaces.
+6. Document consumer deps in README (`aether-store-fs` vs `aether-runtime`).
+7. Later: **`aether-store-jdbc`** (or other) as a **separate** module behind the same interfaces — never fold into `aether-store-fs` or `aether-runtime`.
 
 ### Key decisions (summary)
 
@@ -310,6 +336,7 @@ Root directory is configuration (constructor / config object), not a global sing
 | Uniqueness | `@Unique` on fields; default group = field name; same group = composite |
 | Singleton | `@Singleton` + `AetherSingletonStore` (no caller id) |
 | First backend | Filesystem, one JSON file per id under `{root}/{type}/` |
+| Provider packaging | **One module/JAR/bundle per persistence provider**; `aether-runtime` stays DTO aggregator only |
 
 ### Open for implementation detail (non-blocking)
 
