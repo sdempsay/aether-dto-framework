@@ -36,6 +36,7 @@ import org.aether.annotations.MaxLength;
 import org.aether.annotations.MinLength;
 import org.aether.annotations.Nullable;
 import org.aether.annotations.RegexMatch;
+import org.aether.annotations.Singleton;
 import org.dempsay.support.jsr269.annotation.Jsr269Processor;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResourceAction;
@@ -43,7 +44,8 @@ import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
 
 /**
- * Generates validated builders for {@link AetherRecord}-annotated flat record DTOs.
+ * Generates validated builders and store interfaces for {@link AetherRecord}
+ * flat record DTOs.
  *
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0
@@ -92,6 +94,7 @@ public class AetherBuilderProcessor extends AbstractProcessor {
 
             final List<InterfaceViewModel> viewInterfaces = collectViewInterfaces(record, components.get());
             generateBuilder(record, components.get(), viewInterfaces);
+            generateStore(record);
         }
         return false;
     }
@@ -340,7 +343,7 @@ public class AetherBuilderProcessor extends AbstractProcessor {
             final ExceptionalResponse<Writer> writerResponse = openWriter(
                     record,
                     packageName,
-                    recordSimpleName,
+                    recordSimpleName + "Builder",
                     e -> error(record, "Failed to open builder writer: " + e.getMessage()));
 
             if (writerResponse.wasNoError()) {
@@ -353,22 +356,55 @@ public class AetherBuilderProcessor extends AbstractProcessor {
     }
 
     /**
-     * Opens a source file writer for the generated builder.
+     * Generates {@code {Record}Store} extending the appropriate Aether store port
+     * for OSGi SCR / type-based injection.
      *
      * @param record the annotated record element
-     * @param packageName target package for the generated builder
-     * @param recordSimpleName simple name of the annotated record
+     */
+    private void generateStore(final TypeElement record) {
+        final String packageName = elements.getPackageOf(record).getQualifiedName().toString();
+        final String recordSimpleName = record.getSimpleName().toString();
+        final boolean singleton = record.getAnnotation(Singleton.class) != null;
+
+        final ExceptionalResponse<String> rendered = BuilderCodegen.renderStore(
+                packageName,
+                recordSimpleName,
+                singleton,
+                e -> error(record, "Failed to generate store: " + e.getMessage()));
+
+        if (rendered.wasNoError()) {
+            final ExceptionalResponse<Writer> writerResponse = openWriter(
+                    record,
+                    packageName,
+                    recordSimpleName + "Store",
+                    e -> error(record, "Failed to open store writer: " + e.getMessage()));
+
+            if (writerResponse.wasNoError()) {
+                ExceptionalResourceAction
+                        .of(() -> writerResponse.response(), writer -> writer.write(rendered.response()))
+                        .with(e -> error(record, "Failed to write store: " + e.getMessage()))
+                        .execute();
+            }
+        }
+    }
+
+    /**
+     * Opens a source file writer for a generated type.
+     *
+     * @param record the annotated record element
+     * @param packageName target package
+     * @param simpleName simple name of the generated type (e.g. {@code MyDtoBuilder})
      * @param onError invoked when the source file cannot be created
      * @return the filer writer, or failure when the source file cannot be created
      */
     private ExceptionalResponse<Writer> openWriter(
             final TypeElement record,
             final String packageName,
-            final String recordSimpleName,
+            final String simpleName,
             final ExceptionalListener onError) {
         return ExceptionalSupplier.of(() -> {
             final JavaFileObject sourceFile = filer.createSourceFile(
-                    packageName + "." + recordSimpleName + "Builder", record);
+                    packageName + "." + simpleName, record);
             return sourceFile.openWriter();
         }).with(onError).execute();
     }

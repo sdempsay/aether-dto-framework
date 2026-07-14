@@ -73,7 +73,7 @@ When reviewing or fixing exceptional compliance, scope checks to `src/main` and 
 | Module | Role |
 |--------|------|
 | `aether-api` | Annotations, builders, store ports, in-memory fakes, `ValidationException` |
-| `aether-builder-gen` | JSR-269 processor and FreeMarker templates |
+| `aether-builder-gen` | JSR-269 processor: builders + `*Store` interfaces (SCR) |
 | `aether-runtime` | Consumer-facing dependency aggregator |
 | `aether-store-fs` | Filesystem JSON provider (Gson); fully synchronized prototype |
 

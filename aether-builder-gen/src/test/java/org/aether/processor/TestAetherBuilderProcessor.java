@@ -61,6 +61,33 @@ public class TestAetherBuilderProcessor {
     }
 
     @Test
+    public void generatesResourceStoreInterfaceForMarkedRecord() throws Exception {
+        compileFixtures("MyDto.java");
+
+        final File storeFile = outputDir.resolve("fixtures/MyDtoStore.java").toFile();
+        assertTrue(storeFile.exists(), "Store interface should be generated");
+
+        final String source = readFile(storeFile).response();
+        assertTrue(source.contains("import org.aether.store.AetherResourceStore;"));
+        assertTrue(source.contains("public interface MyDtoStore extends AetherResourceStore<MyDto>"));
+        assertFalse(source.contains("AetherSingletonStore"));
+    }
+
+    @Test
+    public void generatesSingletonStoreInterfaceWhenAnnotated() throws Exception {
+        compileFixtures("ConfigDto.java");
+
+        final File storeFile = outputDir.resolve("fixtures/ConfigDtoStore.java").toFile();
+        assertTrue(storeFile.exists(), "Singleton store interface should be generated");
+
+        final String source = readFile(storeFile).response();
+        assertTrue(source.contains("import org.aether.store.AetherSingletonStore;"));
+        assertTrue(source.contains("public interface ConfigDtoStore extends AetherSingletonStore<ConfigDto>"));
+        assertFalse(source.contains("AetherResourceStore"));
+        assertTrue(outputDir.resolve("fixtures/ConfigDtoBuilder.java").toFile().exists());
+    }
+
+    @Test
     public void doesNotGenerateBuilderForUnmarkedRecord() throws Exception {
         compileFixtures("PlainRecord.java");
         assertFalse(outputDir.resolve("fixtures/PlainRecordBuilder.java").toFile().exists());

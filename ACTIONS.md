@@ -1,5 +1,11 @@
 # Actions log
 
+## 2026-07-14 — T5a: generated *Store interfaces for SCR
+
+- Processor emits `{Record}Store` via `Store.java.ftl` for every `@AetherRecord`.
+- Default: `extends AetherResourceStore<Record>`; with `@Singleton`: `extends AetherSingletonStore<Record>`.
+- Tests: MyDtoStore resource port, ConfigDtoStore singleton port.
+
 ## 2026-07-14 — Exceptional compliance for store I/O
 
 - Refactored FS `DocumentIo` and stores to `ExceptionalSupplier` / `ExceptionalResponse` (no `throws IOException` on our APIs).

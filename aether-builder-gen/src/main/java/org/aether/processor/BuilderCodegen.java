@@ -58,6 +58,34 @@ final class BuilderCodegen {
     }
 
     /**
+     * Renders a store interface source file for the given record.
+     *
+     * @param packageName target package
+     * @param recordSimpleName simple name of the annotated record
+     * @param singleton whether the record is {@code @Singleton}
+     * @param onError invoked when template loading or rendering fails
+     * @return generated Java source, or failure when rendering fails
+     */
+    static ExceptionalResponse<String> renderStore(
+            final String packageName,
+            final String recordSimpleName,
+            final boolean singleton,
+            final ExceptionalListener onError) {
+        return ExceptionalSupplier.of(() -> {
+            final Template template = CONFIGURATION.getTemplate("Store.java.ftl");
+            final Map<String, Object> model = new HashMap<>();
+            model.put("packageName", packageName);
+            model.put("recordName", recordSimpleName);
+            model.put("storeName", recordSimpleName + "Store");
+            model.put("singleton", singleton);
+
+            final StringWriter output = new StringWriter();
+            template.process(model, output);
+            return output.toString();
+        }).with(onError).execute();
+    }
+
+    /**
      * Adapts a view model for FreeMarker property access.
      *
      * @param view the interface view metadata

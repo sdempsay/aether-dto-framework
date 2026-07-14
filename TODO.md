@@ -18,7 +18,7 @@ Task tracker for Aether (`PRD.md`).
 | T3 | Collection components (`List` and related) on `@AetherRecord` DTOs | pending | [#2](https://github.com/sdempsay/aether-dto-framework/issues/2) |
 | T4 | Extensible / custom validation annotations beyond MVP set | pending | [#3](https://github.com/sdempsay/aether-dto-framework/issues/3) |
 | T5 | OSGi bundle packaging for aether modules | pending | [#4](https://github.com/sdempsay/aether-dto-framework/issues/4) — needs generated `*Store` interfaces for SCR (see PRD-updated) |
-| T5a | Codegen: `*Store` interfaces extending `AetherResourceStore` / `AetherSingletonStore` | pending | Supports OSGi SCR; pairs with T5/T6 |
-| T6 | Persistence layer: CRUD stores, metadata envelope, FS JSON (design in PRD-updated) | in_progress | [#5](https://github.com/sdempsay/aether-dto-framework/issues/5) — api + memory + unique/singleton + **aether-store-fs**; remaining: SCR `*Store` codegen, AAA decorator, polish |
+| T5a | Codegen: `*Store` interfaces extending `AetherResourceStore` / `AetherSingletonStore` | complete | `Store.java.ftl`; `@Singleton` → `AetherSingletonStore`, else `AetherResourceStore` |
+| T6 | Persistence layer: CRUD stores, metadata envelope, FS JSON (design in PRD-updated) | in_progress | [#5](https://github.com/sdempsay/aether-dto-framework/issues/5) — remaining: AAA decorator, polish; SCR store interfaces done (T5a) |
 | T7 | Type-level validation annotations (deferred from MVP design) | pending | [#6](https://github.com/sdempsay/aether-dto-framework/issues/6) |
 | T8 | Wishlist: GraphQL / generic frontend query after filtering exists | wishlist | [#7](https://github.com/sdempsay/aether-dto-framework/issues/7) |
