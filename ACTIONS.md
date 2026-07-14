@@ -3,6 +3,7 @@
 ## 2026-07-14 — AetherFailure for HTTP-mappable errors
 
 - Documented `AetherFailure` enum + `AetherException` on the exceptional listener path (no ExceptionalResponse subclass). Host maps enum → HTTP status later.
+- Enum constants are PascalCase (`NotFound`, not `NOT_FOUND`) per project preference.
 
 ## 2026-07-14 — Store API: ExceptionalListener first
 

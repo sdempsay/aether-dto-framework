@@ -215,22 +215,24 @@ Helpers (illustrative):
 
 ```java
 // onError first; returns ExceptionalResponse.failure() after notifying listener
-AetherResponses.fail(onError, AetherFailure.NOT_FOUND, "UserDto/" + id);
+AetherResponses.fail(onError, AetherFailure.NotFound, "UserDto/" + id);
 ```
 
 | Situation | `AetherFailure` | Typical HTTP (host mapping) |
 |-----------|-----------------|----------------------------|
-| Domain validation failed | `VALIDATION` | 400 |
-| Resource missing | `NOT_FOUND` | 404 |
-| Unauthorized read/update/delete (hide existence) | `NOT_FOUND` | 404 |
-| Unauthorized create / explicit deny | `FORBIDDEN` | 403 |
-| Duplicate id / unique / version / singleton exists | `CONFLICT` | 409 |
-| Path vs body identity mismatch | `IDENTITY` | 400 |
-| Backend I/O / unexpected | `INTERNAL` | 500 |
+| Domain validation failed | `Validation` | 400 |
+| Resource missing | `NotFound` | 404 |
+| Unauthorized read/update/delete (hide existence) | `NotFound` | 404 |
+| Unauthorized create / explicit deny | `Forbidden` | 403 |
+| Duplicate id / unique / version / singleton exists | `Conflict` | 409 |
+| Path vs body identity mismatch | `Identity` | 400 |
+| Backend I/O / unexpected | `Internal` | 500 |
 
 **Host mapping (later, not in aether-api core):** e.g. servlet/Spring layer `switch (ex.failure())` → status code. Keep the enum stable; don’t put HTTP types inside `aether-api`.
 
-Validation may still use existing `ValidationException`; store layer should surface it as `AetherFailure.VALIDATION` (wrap or translate) so one switch covers persistence-facing errors.
+Validation may still use existing `ValidationException`; store layer should surface it as `AetherFailure.Validation` (wrap or translate) so one switch covers persistence-facing errors.
+
+**Enum naming:** Aether public enums use **PascalCase** constants (`NotFound`, not `NOT_FOUND`). Apply the same style to other new enums in this project unless there is a strong interop reason not to.
 
 Store code returns plain `ExceptionalResponse.success(...)` / `failure()`; it does **not** invent a subclass of `ExceptionalResponse`.
 
