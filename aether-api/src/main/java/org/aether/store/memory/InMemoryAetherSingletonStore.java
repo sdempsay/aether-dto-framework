@@ -22,6 +22,10 @@ import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 /**
  * In-memory {@link AetherSingletonStore} for tests and lightweight use.
  *
+ * <p><strong>Concurrency:</strong> uses {@link AtomicReference} for the single
+ * slot; concurrent create/update still has check-then-act gaps similar to the
+ * multi-resource in-memory store. Prefer one thread per store in unit tests.
+ *
  * @param <T> domain resource type
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0

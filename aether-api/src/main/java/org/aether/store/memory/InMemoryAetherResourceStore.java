@@ -33,6 +33,16 @@ import org.dempsay.utils.exceptional.api.ExceptionalResponse;
  * When constructed with a record {@link Class}, enforces {@code @Unique}
  * constraints.
  *
+ * <p><strong>Concurrency (not a production multi-writer store):</strong> this
+ * implementation is aimed at unit tests. Individual {@link ConcurrentHashMap}
+ * operations are thread-safe, but create/update/delete each perform
+ * <em>multiple</em> steps (unique index claim/release/reindex, then entry
+ * put/replace/remove). Those sequences are not atomic end-to-end. Concurrent
+ * writers on the same id (or racing unique-key reindex) can leave the unique
+ * index and document map inconsistent, or lose updates. Prefer single-threaded
+ * use per store instance in tests; add per-id locking only if a suite truly
+ * needs parallel writers.
+ *
  * @param <T> domain resource type
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0

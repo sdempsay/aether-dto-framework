@@ -9,6 +9,12 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * In-memory secondary indexes for unique constraint groups.
  *
+ * <p><strong>Concurrency:</strong> map operations use {@link ConcurrentHashMap},
+ * but {@link #reindex} is release-then-claim (not one atomic step). Callers that
+ * interleave reindex with document updates without external locking (see
+ * {@link org.aether.store.memory.InMemoryAetherResourceStore}) can race. Fine for
+ * typical single-threaded unit tests.
+ *
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 0.1.0
  */
