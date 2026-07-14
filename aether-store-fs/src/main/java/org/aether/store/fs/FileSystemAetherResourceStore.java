@@ -1,6 +1,5 @@
 package org.aether.store.fs;
 
-import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,13 +28,14 @@ import org.aether.store.unique.UniqueIndexTable;
 import org.aether.store.unique.UniqueKey;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
+import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
 
 /**
  * Filesystem JSON {@link org.aether.store.AetherResourceStore} using Gson.
  *
  * <p>Layout: {@code {root}/{resourceType}/{id}.json}. Fully synchronized on a
- * single lock for thread safety (simple and correct for prototypes; may be slow
- * under high contention).
+ * single lock for thread safety. All I/O uses exceptional patterns (no
+ * {@code throws} on store methods).
  *
  * @param <T> domain resource type
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
@@ -51,6 +51,7 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
     private final Supplier<String> versionGenerator;
     private final UniqueConstraintModel uniqueModel;
     private final UniqueIndexTable uniqueIndex = new UniqueIndexTable();
+    private boolean uniqueIndexLoaded;
 
     /**
      * Opens a store under {@code root}/{@code type.getSimpleName()}.
@@ -94,7 +95,7 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
         this.versionGenerator = Objects.requireNonNull(versionGenerator, "versionGenerator");
         this.gson = GsonSupport.createGson();
         this.documentIo = new DocumentIo(gson);
-        rebuildUniqueIndex();
+        this.uniqueIndexLoaded = false;
     }
 
     @Override
@@ -116,6 +117,10 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
         synchronized (lock) {
             Objects.requireNonNull(onError, "onError");
             Objects.requireNonNull(principal, "principal");
+            final ExceptionalResponse<AetherAck> indexReady = ensureUniqueIndex(onError);
+            if (indexReady.wasError()) {
+                return ExceptionalResponse.failure();
+            }
             final String idError = FileSystemPaths.invalidIdReason(id);
             if (idError != null) {
                 return AetherResponses.fail(onError, AetherFailure.Validation, idError);
@@ -124,11 +129,7 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
             if (!documentIo.exists(path)) {
                 return AetherResponses.fail(onError, AetherFailure.NotFound, "Resource not found: " + id);
             }
-            try {
-                return ExceptionalResponse.success(readPersisted(path));
-            } catch (final IOException ex) {
-                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read: " + id, ex);
-            }
+            return readPersisted(onError, path);
         }
     }
 
@@ -146,6 +147,10 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
             Objects.requireNonNull(resource, "resource");
             Objects.requireNonNull(expectedVersion, "expectedVersion");
             Objects.requireNonNull(options, "options");
+            final ExceptionalResponse<AetherAck> indexReady = ensureUniqueIndex(onError);
+            if (indexReady.wasError()) {
+                return ExceptionalResponse.failure();
+            }
             final String idError = FileSystemPaths.invalidIdReason(id);
             if (idError != null) {
                 return AetherResponses.fail(onError, AetherFailure.Validation, idError);
@@ -159,40 +164,53 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
                 return AetherResponses.fail(onError, AetherFailure.NotFound, "Resource not found: " + id);
             }
 
-            try {
-                final AetherPersisted<T> existing = readPersisted(path);
-                if (!existing.metadata().version().equals(expectedVersion)) {
-                    return AetherResponses.fail(
-                            onError,
-                            AetherFailure.Conflict,
-                            "Version mismatch for: " + id);
-                }
-
-                final List<UniqueKey> oldKeys = uniqueModel.keysOf(existing.resource());
-                final List<UniqueKey> newKeys = uniqueModel.keysOf(resource);
-                final String conflictGroup = uniqueIndex.reindex(id, oldKeys, newKeys);
-                if (conflictGroup != null) {
-                    return AetherResponses.fail(
-                            onError,
-                            AetherFailure.Conflict,
-                            "Unique constraint violated for group: " + conflictGroup);
-                }
-
-                final Instant now = clock.instant();
-                final AetherPersisted<T> updated = new DefaultAetherPersisted<>(
-                        new DefaultAetherResourceMetadata(
-                                id,
-                                existing.metadata().createdAt(),
-                                now,
-                                versionGenerator.get(),
-                                existing.metadata().createdBy(),
-                                principal.name()),
-                        resource);
-                writePersisted(path, updated);
-                return ExceptionalResponse.success(updated);
-            } catch (final IOException ex) {
-                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to update: " + id, ex);
+            final ExceptionalResponse<AetherPersisted<T>> existingResponse = readPersisted(onError, path);
+            if (existingResponse.wasError()) {
+                return existingResponse;
             }
+            final AetherPersisted<T> existing = existingResponse.response();
+            if (!existing.metadata().version().equals(expectedVersion)) {
+                return AetherResponses.fail(
+                        onError,
+                        AetherFailure.Conflict,
+                        "Version mismatch for: " + id);
+            }
+
+            final ExceptionalResponse<List<UniqueKey>> oldKeysResponse = uniqueModel.keysOf(existing.resource());
+            if (oldKeysResponse.wasError()) {
+                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read unique keys");
+            }
+            final ExceptionalResponse<List<UniqueKey>> newKeysResponse = uniqueModel.keysOf(resource);
+            if (newKeysResponse.wasError()) {
+                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read unique keys");
+            }
+            final String conflictGroup = uniqueIndex.reindex(
+                    id,
+                    oldKeysResponse.response(),
+                    newKeysResponse.response());
+            if (conflictGroup != null) {
+                return AetherResponses.fail(
+                        onError,
+                        AetherFailure.Conflict,
+                        "Unique constraint violated for group: " + conflictGroup);
+            }
+
+            final Instant now = clock.instant();
+            final AetherPersisted<T> updated = new DefaultAetherPersisted<>(
+                    new DefaultAetherResourceMetadata(
+                            id,
+                            existing.metadata().createdAt(),
+                            now,
+                            versionGenerator.get(),
+                            existing.metadata().createdBy(),
+                            principal.name()),
+                    resource);
+            final ExceptionalResponse<AetherAck> written = writePersisted(path, updated);
+            if (written.wasError()) {
+                uniqueIndex.reindex(id, newKeysResponse.response(), oldKeysResponse.response());
+                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to update: " + id);
+            }
+            return ExceptionalResponse.success(updated);
         }
     }
 
@@ -204,21 +222,33 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
         synchronized (lock) {
             Objects.requireNonNull(onError, "onError");
             Objects.requireNonNull(principal, "principal");
+            final ExceptionalResponse<AetherAck> indexReady = ensureUniqueIndex(onError);
+            if (indexReady.wasError()) {
+                return indexReady;
+            }
             final String idError = FileSystemPaths.invalidIdReason(id);
             if (idError != null) {
                 return AetherResponses.fail(onError, AetherFailure.Validation, idError);
             }
             final Path path = FileSystemPaths.documentPath(typeDirectory, id);
-            try {
-                if (documentIo.exists(path)) {
-                    final AetherPersisted<T> existing = readPersisted(path);
-                    documentIo.deleteIfExists(path);
-                    uniqueIndex.release(id, uniqueModel.keysOf(existing.resource()));
-                }
+            if (!documentIo.exists(path)) {
                 return ExceptionalResponse.success(AetherAck.INSTANCE);
-            } catch (final IOException ex) {
-                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to delete: " + id, ex);
             }
+            final ExceptionalResponse<AetherPersisted<T>> existingResponse = readPersisted(onError, path);
+            if (existingResponse.wasError()) {
+                return ExceptionalResponse.failure();
+            }
+            final ExceptionalResponse<List<UniqueKey>> keysResponse =
+                    uniqueModel.keysOf(existingResponse.response().resource());
+            if (keysResponse.wasError()) {
+                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read unique keys");
+            }
+            final ExceptionalResponse<AetherAck> deleted = documentIo.deleteIfExists(path);
+            if (deleted.wasError()) {
+                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to delete: " + id);
+            }
+            uniqueIndex.release(id, keysResponse.response());
+            return ExceptionalResponse.success(AetherAck.INSTANCE);
         }
     }
 
@@ -230,6 +260,10 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
         Objects.requireNonNull(onError, "onError");
         Objects.requireNonNull(principal, "principal");
         Objects.requireNonNull(resource, "resource");
+        final ExceptionalResponse<AetherAck> indexReady = ensureUniqueIndex(onError);
+        if (indexReady.wasError()) {
+            return ExceptionalResponse.failure();
+        }
         final String idError = FileSystemPaths.invalidIdReason(id);
         if (idError != null) {
             return AetherResponses.fail(onError, AetherFailure.Validation, idError);
@@ -240,7 +274,11 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
             return AetherResponses.fail(onError, AetherFailure.Conflict, "Resource already exists: " + id);
         }
 
-        final List<UniqueKey> keys = uniqueModel.keysOf(resource);
+        final ExceptionalResponse<List<UniqueKey>> keysResponse = uniqueModel.keysOf(resource);
+        if (keysResponse.wasError()) {
+            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read unique keys");
+        }
+        final List<UniqueKey> keys = keysResponse.response();
         final String conflictGroup = uniqueIndex.tryClaim(id, keys);
         if (conflictGroup != null) {
             return AetherResponses.fail(
@@ -259,56 +297,85 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
                         principal.name(),
                         principal.name()),
                 resource);
-        try {
-            writePersisted(path, created);
-            return ExceptionalResponse.success(created);
-        } catch (final IOException ex) {
+        final ExceptionalResponse<AetherAck> written = writePersisted(path, created);
+        if (written.wasError()) {
             uniqueIndex.release(id, keys);
-            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to create: " + id, ex);
+            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to create: " + id);
         }
+        return ExceptionalResponse.success(created);
     }
 
-    private void rebuildUniqueIndex() {
-        synchronized (lock) {
+    private ExceptionalResponse<AetherAck> ensureUniqueIndex(final ExceptionalListener onError) {
+        if (uniqueIndexLoaded) {
+            return ExceptionalResponse.success(AetherAck.INSTANCE);
+        }
+        final ExceptionalResponse<AetherAck> rebuilt = rebuildUniqueIndex();
+        if (rebuilt.wasError()) {
+            return AetherResponses.fail(
+                    onError,
+                    AetherFailure.Internal,
+                    "Failed to rebuild unique index under " + typeDirectory);
+        }
+        uniqueIndexLoaded = true;
+        return ExceptionalResponse.success(AetherAck.INSTANCE);
+    }
+
+    private ExceptionalResponse<AetherAck> rebuildUniqueIndex() {
+        return ExceptionalSupplier.of(() -> {
             if (!Files.isDirectory(typeDirectory)) {
-                return;
+                return AetherAck.INSTANCE;
             }
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(typeDirectory, "*.json")) {
                 for (final Path path : stream) {
-                    if (path.getFileName().toString().endsWith(".tmp")) {
-                        continue;
+                    final ExceptionalResponse<AetherPersisted<T>> persisted = readPersistedQuiet(path);
+                    if (persisted.wasError()) {
+                        throw new IllegalStateException("Failed to read " + path);
                     }
-                    final AetherPersisted<T> persisted = readPersisted(path);
-                    uniqueIndex.tryClaim(
-                            persisted.metadata().id(),
-                            uniqueModel.keysOf(persisted.resource()));
+                    final ExceptionalResponse<List<UniqueKey>> keys =
+                            uniqueModel.keysOf(persisted.response().resource());
+                    if (keys.wasError()) {
+                        throw new IllegalStateException("Failed to extract unique keys from " + path);
+                    }
+                    uniqueIndex.tryClaim(persisted.response().metadata().id(), keys.response());
                 }
-            } catch (final IOException ex) {
-                throw new IllegalStateException("Failed to rebuild unique index under " + typeDirectory, ex);
             }
+            return AetherAck.INSTANCE;
+        }).execute();
+    }
+
+    private ExceptionalResponse<AetherPersisted<T>> readPersisted(
+            final ExceptionalListener onError,
+            final Path path) {
+        final ExceptionalResponse<AetherPersisted<T>> read = readPersistedQuiet(path);
+        if (read.wasError()) {
+            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read: " + path.getFileName());
         }
+        return read;
     }
 
-    private AetherPersisted<T> readPersisted(final Path path) throws IOException {
-        final StoredDocument document = documentIo.read(path);
-        final StoredMetadata meta = document.getMetadata();
-        final T resource = gson.fromJson(document.getResource(), resourceType);
-        return new DefaultAetherPersisted<>(
-                new DefaultAetherResourceMetadata(
-                        meta.getId(),
-                        meta.getCreatedAt(),
-                        meta.getUpdatedAt(),
-                        meta.getVersion(),
-                        meta.getCreatedBy(),
-                        meta.getUpdatedBy()),
-                resource);
+    private ExceptionalResponse<AetherPersisted<T>> readPersistedQuiet(final Path path) {
+        return documentIo.read(path).chain((listener, document) -> {
+            final StoredMetadata meta = document.getMetadata();
+            final T resource = gson.fromJson(document.getResource(), resourceType);
+            return ExceptionalResponse.success(new DefaultAetherPersisted<>(
+                    new DefaultAetherResourceMetadata(
+                            meta.getId(),
+                            meta.getCreatedAt(),
+                            meta.getUpdatedAt(),
+                            meta.getVersion(),
+                            meta.getCreatedBy(),
+                            meta.getUpdatedBy()),
+                    resource));
+        });
     }
 
-    private void writePersisted(final Path path, final AetherPersisted<T> persisted) throws IOException {
+    private ExceptionalResponse<AetherAck> writePersisted(
+            final Path path,
+            final AetherPersisted<T> persisted) {
         final JsonElement resourceJson = gson.toJsonTree(persisted.resource(), resourceType);
         final StoredDocument document = new StoredDocument(
                 DocumentIo.toWire(persisted.metadata()),
                 resourceJson);
-        documentIo.writeAtomic(path, document);
+        return documentIo.writeAtomic(path, document);
     }
 }

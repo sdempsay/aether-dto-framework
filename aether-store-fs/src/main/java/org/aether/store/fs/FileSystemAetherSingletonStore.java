@@ -1,6 +1,5 @@
 package org.aether.store.fs;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
@@ -27,8 +26,8 @@ import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 /**
  * Filesystem JSON {@link AetherSingletonStore} using Gson.
  *
- * <p>Layout: {@code {root}/{resourceType}/_singleton.json}. Fully synchronized
- * for thread-safe prototyping.
+ * <p>Layout: {@code {root}/{resourceType}/_singleton.json}. Fully synchronized.
+ * All I/O uses exceptional patterns.
  *
  * @param <T> domain resource type
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
@@ -94,12 +93,11 @@ public final class FileSystemAetherSingletonStore<T> implements AetherSingletonS
             }
             final Instant now = clock.instant();
             final AetherPersisted<T> created = envelope(principal, resource, now, now, principal.name());
-            try {
-                writePersisted(created);
-                return ExceptionalResponse.success(created);
-            } catch (final IOException ex) {
-                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to create singleton", ex);
+            final ExceptionalResponse<AetherAck> written = writePersisted(created);
+            if (written.wasError()) {
+                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to create singleton");
             }
+            return ExceptionalResponse.success(created);
         }
     }
 
@@ -113,11 +111,7 @@ public final class FileSystemAetherSingletonStore<T> implements AetherSingletonS
             if (!documentIo.exists(documentPath)) {
                 return AetherResponses.fail(onError, AetherFailure.NotFound, "Singleton not found");
             }
-            try {
-                return ExceptionalResponse.success(readPersisted());
-            } catch (final IOException ex) {
-                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read singleton", ex);
-            }
+            return readPersisted(onError);
         }
     }
 
@@ -142,23 +136,26 @@ public final class FileSystemAetherSingletonStore<T> implements AetherSingletonS
                 return AetherResponses.fail(onError, AetherFailure.NotFound, "Singleton not found");
             }
 
-            try {
-                final AetherPersisted<T> existing = readPersisted();
-                if (!existing.metadata().version().equals(expectedVersion)) {
-                    return AetherResponses.fail(onError, AetherFailure.Conflict, "Version mismatch for singleton");
-                }
-                final Instant now = clock.instant();
-                final AetherPersisted<T> updated = envelope(
-                        principal,
-                        resource,
-                        existing.metadata().createdAt(),
-                        now,
-                        existing.metadata().createdBy());
-                writePersisted(updated);
-                return ExceptionalResponse.success(updated);
-            } catch (final IOException ex) {
-                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to update singleton", ex);
+            final ExceptionalResponse<AetherPersisted<T>> existingResponse = readPersisted(onError);
+            if (existingResponse.wasError()) {
+                return existingResponse;
             }
+            final AetherPersisted<T> existing = existingResponse.response();
+            if (!existing.metadata().version().equals(expectedVersion)) {
+                return AetherResponses.fail(onError, AetherFailure.Conflict, "Version mismatch for singleton");
+            }
+            final Instant now = clock.instant();
+            final AetherPersisted<T> updated = envelope(
+                    principal,
+                    resource,
+                    existing.metadata().createdAt(),
+                    now,
+                    existing.metadata().createdBy());
+            final ExceptionalResponse<AetherAck> written = writePersisted(updated);
+            if (written.wasError()) {
+                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to update singleton");
+            }
+            return ExceptionalResponse.success(updated);
         }
     }
 
@@ -169,12 +166,11 @@ public final class FileSystemAetherSingletonStore<T> implements AetherSingletonS
         synchronized (lock) {
             Objects.requireNonNull(onError, "onError");
             Objects.requireNonNull(principal, "principal");
-            try {
-                documentIo.deleteIfExists(documentPath);
-                return ExceptionalResponse.success(AetherAck.INSTANCE);
-            } catch (final IOException ex) {
-                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to delete singleton", ex);
+            final ExceptionalResponse<AetherAck> deleted = documentIo.deleteIfExists(documentPath);
+            if (deleted.wasError()) {
+                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to delete singleton");
             }
+            return ExceptionalResponse.success(AetherAck.INSTANCE);
         }
     }
 
@@ -195,24 +191,30 @@ public final class FileSystemAetherSingletonStore<T> implements AetherSingletonS
                 resource);
     }
 
-    private AetherPersisted<T> readPersisted() throws IOException {
-        final StoredDocument document = documentIo.read(documentPath);
-        final StoredMetadata meta = document.getMetadata();
-        final T resource = gson.fromJson(document.getResource(), resourceType);
-        return new DefaultAetherPersisted<>(
-                new DefaultAetherResourceMetadata(
-                        meta.getId(),
-                        meta.getCreatedAt(),
-                        meta.getUpdatedAt(),
-                        meta.getVersion(),
-                        meta.getCreatedBy(),
-                        meta.getUpdatedBy()),
-                resource);
+    private ExceptionalResponse<AetherPersisted<T>> readPersisted(final ExceptionalListener onError) {
+        final ExceptionalResponse<AetherPersisted<T>> read = documentIo.read(documentPath).chain(
+                (listener, document) -> {
+                    final StoredMetadata meta = document.getMetadata();
+                    final T resource = gson.fromJson(document.getResource(), resourceType);
+                    return ExceptionalResponse.success(new DefaultAetherPersisted<>(
+                            new DefaultAetherResourceMetadata(
+                                    meta.getId(),
+                                    meta.getCreatedAt(),
+                                    meta.getUpdatedAt(),
+                                    meta.getVersion(),
+                                    meta.getCreatedBy(),
+                                    meta.getUpdatedBy()),
+                            resource));
+                });
+        if (read.wasError()) {
+            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read singleton");
+        }
+        return read;
     }
 
-    private void writePersisted(final AetherPersisted<T> persisted) throws IOException {
+    private ExceptionalResponse<AetherAck> writePersisted(final AetherPersisted<T> persisted) {
         final JsonElement resourceJson = gson.toJsonTree(persisted.resource(), resourceType);
-        documentIo.writeAtomic(
+        return documentIo.writeAtomic(
                 documentPath,
                 new StoredDocument(DocumentIo.toWire(persisted.metadata()), resourceJson));
     }

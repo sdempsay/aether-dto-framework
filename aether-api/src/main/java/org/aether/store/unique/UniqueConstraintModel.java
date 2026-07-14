@@ -7,8 +7,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.aether.annotations.Unique;
+import org.dempsay.utils.exceptional.api.ExceptionalResponse;
+import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
 
 /**
  * Describes {@link Unique} groups on a record type and extracts index keys from
@@ -84,41 +87,35 @@ public final class UniqueConstraintModel {
      * (multiple nulls are allowed across documents).
      *
      * @param resource domain instance
-     * @return keys to claim or release
+     * @return keys to claim or release, or failure if an accessor cannot be read
      */
-    public List<UniqueKey> keysOf(final Object resource) {
+    public ExceptionalResponse<List<UniqueKey>> keysOf(final Object resource) {
         Objects.requireNonNull(resource, "resource");
         if (groups.isEmpty()) {
-            return List.of();
+            return ExceptionalResponse.success(List.of());
         }
+        return ExceptionalSupplier.of(() -> extractKeys(resource)).execute();
+    }
+
+    private List<UniqueKey> extractKeys(final Object resource) throws ReflectiveOperationException {
         final List<UniqueKey> keys = new ArrayList<>();
         for (final Group group : groups) {
             final List<String> values = new ArrayList<>(group.accessors().size());
             boolean skip = false;
             for (final Accessor accessor : group.accessors()) {
-                final Object raw = read(accessor.method(), resource);
-                if (raw == null) {
+                // Wrap in Optional so null field values are not ExceptionalResponse.success(null)
+                final Optional<Object> raw = Optional.ofNullable(accessor.method().invoke(resource));
+                if (raw.isEmpty()) {
                     skip = true;
                     break;
                 }
-                values.add(String.valueOf(raw));
+                values.add(String.valueOf(raw.get()));
             }
             if (!skip) {
                 keys.add(new UniqueKey(group.name(), values));
             }
         }
         return keys;
-    }
-
-    private static Object read(final Method accessor, final Object resource) {
-        try {
-            // Nullable field values must be readable; ExceptionalResponse.success(null)
-            // is treated as failure in exceptional 1.0.x, so invoke directly here.
-            return accessor.invoke(resource);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Failed to read unique accessor " + accessor.getName(), ex);
-        }
     }
 
     private record Group(String name, List<Accessor> accessors) {

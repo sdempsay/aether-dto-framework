@@ -1,5 +1,11 @@
 # Actions log
 
+## 2026-07-14 — Exceptional compliance for store I/O
+
+- Refactored FS `DocumentIo` and stores to `ExceptionalSupplier` / `ExceptionalResponse` (no `throws IOException` on our APIs).
+- Unique key extraction returns `ExceptionalResponse`; lazy unique-index rebuild under store ops with listener.
+- Gson `TypeAdapter` still declares `throws IOException` (library SPI). Principal blank-name remains `IllegalArgumentException` (programmer error).
+
 ## 2026-07-14 — Session wrap: review + push persistence stack
 
 - Updated ACTIONS for completed T6 slices (api ports, unique/singleton, `aether-store-fs`).

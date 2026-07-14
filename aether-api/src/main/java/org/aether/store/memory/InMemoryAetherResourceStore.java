@@ -133,7 +133,11 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
             final AetherPrincipal principal,
             final T resource,
             final String id) {
-        final List<UniqueKey> keys = uniqueModel.keysOf(resource);
+        final ExceptionalResponse<List<UniqueKey>> keysResponse = uniqueModel.keysOf(resource);
+        if (keysResponse.wasError()) {
+            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read unique keys");
+        }
+        final List<UniqueKey> keys = keysResponse.response();
         final String conflictGroup = uniqueIndex.tryClaim(id, keys);
         if (conflictGroup != null) {
             return AetherResponses.fail(
@@ -205,8 +209,16 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
                     "Version mismatch for: " + id);
         }
 
-        final List<UniqueKey> oldKeys = uniqueModel.keysOf(existing.resource());
-        final List<UniqueKey> newKeys = uniqueModel.keysOf(resource);
+        final ExceptionalResponse<List<UniqueKey>> oldKeysResponse = uniqueModel.keysOf(existing.resource());
+        if (oldKeysResponse.wasError()) {
+            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read unique keys");
+        }
+        final ExceptionalResponse<List<UniqueKey>> newKeysResponse = uniqueModel.keysOf(resource);
+        if (newKeysResponse.wasError()) {
+            return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read unique keys");
+        }
+        final List<UniqueKey> oldKeys = oldKeysResponse.response();
+        final List<UniqueKey> newKeys = newKeysResponse.response();
         final String conflictGroup = uniqueIndex.reindex(id, oldKeys, newKeys);
         if (conflictGroup != null) {
             return AetherResponses.fail(
@@ -247,8 +259,13 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
         Objects.requireNonNull(id, "id");
         final AetherPersisted<T> removed = entries.remove(id);
         if (removed != null) {
-            uniqueIndex.release(id, uniqueModel.keysOf(removed.resource()));
+            final ExceptionalResponse<List<UniqueKey>> keysResponse = uniqueModel.keysOf(removed.resource());
+            if (keysResponse.wasError()) {
+                return AetherResponses.fail(onError, AetherFailure.Internal, "Failed to read unique keys");
+            }
+            uniqueIndex.release(id, keysResponse.response());
         }
         return ExceptionalResponse.success(AetherAck.INSTANCE);
     }
 }
+
