@@ -16,3 +16,9 @@ Mirror of review-pipeline hybrid tracker:
 - **Start work:** TODO row → `gh issue view N`.
 - **Ship work:** PR with `Fixes #N` → mark TODO complete → log in `ACTIONS.md`.
 - This repo is on **GitHub** (`sdempsay/aether-dto-framework`); use `gh`, not `glab`.
+
+## Code review before complete
+
+- Agents should run **`code-review diff`** (from the review-pipeline CLI) on the change set before treating work as complete or opening/updating a PR.
+- Typical: `code-review diff` or `code-review diff --base origin/master`; optional `--output <file.md>`.
+- Address must-fix / high-severity findings; document intentional deferrals.

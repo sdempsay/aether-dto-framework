@@ -18,9 +18,33 @@ Hybrid tracker (same pattern as review-pipeline):
 
 **When starting work:** read TODO row → `gh issue view N` for full context (when network available).
 
-**When shipping:** PR with `Fixes #N` → issue closes → mark TODO `complete` → one line in `ACTIONS.md`.
+**When shipping:** run code review (below) → PR with `Fixes #N` → issue closes → mark TODO `complete` → one line in `ACTIONS.md`.
 
 **When adding work:** open a GitHub issue (body = acceptance criteria) → add a TODO row with status `pending` and the issue link. Do not put long design notes only in `TODO.md`.
+
+## Code review (`code-review diff`)
+
+Before a change set is considered complete (and before opening/updating a PR), run the local review pipeline on the diff:
+
+```bash
+code-review diff
+```
+
+Useful variants:
+
+| Goal | Command |
+|------|---------|
+| Uncommitted / working-tree changes (default) | `code-review diff` |
+| Against a base branch/commit | `code-review diff --base origin/master` |
+| Staged only | `code-review diff --staged` |
+| Save full report | `code-review diff --output review-output.md` |
+| Classify only (no LLM) | `code-review diff --dry-run` |
+
+Expectations:
+
+- Prefer addressing **must-fix** / high-severity findings before ship; note intentional deferrals in `ACTIONS.md` or the PR.
+- Use `--no-chat` in non-interactive agent sessions (default is already no chat unless `--chat`).
+- Tool is on PATH as `code-review` (install from review-pipeline / `~/tools/code-review`). If missing, say so and fall back to a careful manual review rather than inventing results.
 
 ## Session start
 
