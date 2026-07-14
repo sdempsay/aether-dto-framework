@@ -476,6 +476,38 @@ Providers implement the same interfaces; they never depend on each other. OSGi l
 - Normalization for unique index keys (case folding, trimming)—default: exact string match unless annotated later.
 - Locking strategy for FS index + document consistency under concurrent processes.
 
+### OSGi SCR: generated store interfaces (required for DS)
+
+OSGi Declarative Services (SCR) registers and injects services primarily by **type**. A generic port alone is awkward as a component service interface:
+
+- `AetherResourceStore<UserDto>` is not a reifiable service type SCR can publish cleanly as “the User store.”
+- Consumers need a **stable, named interface** to reference in `@Reference` / XML (`interface="…UserDtoStore"`).
+- Implementations (FS, in-memory, JDBC) then **implement that generated interface**, which **extends** the generic Aether port.
+
+**Target codegen (when store generation lands):**
+
+```java
+// For a multi-instance @AetherRecord
+public interface UserDtoStore extends AetherResourceStore<UserDto> {}
+
+// For @AetherRecord + @Singleton
+public interface AppConfigDtoStore extends AetherSingletonStore<AppConfigDto> {}
+```
+
+| Piece | Role |
+|-------|------|
+| Generated `*Store` interface | Extends `AetherResourceStore<T>` or `AetherSingletonStore<T>`; SCR service type |
+| Provider impl | `class FsUserDtoStore implements UserDtoStore` (or component class) |
+| Generic Aether ports | Shared contract + default methods / abstract base remain on the parent |
+
+**Implications**
+
+- Builder codegen today only emits `*Builder` implementing `AetherBuilder` (+ view interfaces). **Store interface generation is a separate codegen track** (still FreeMarker / processor), required for OSGi-friendly apps even if pure Java SE can keep using the generic ports.
+- Aligns with T5 (OSGi bundle packaging) and T6 (persistence): DS works when each resource type has a **dedicated service interface** extending the Aether store API.
+- In-memory / FS modules can ship reference components that implement the generated interfaces once those interfaces exist.
+
+**Not required for unit tests** that inject `AetherResourceStore<T>` directly; required for production OSGi SCR wiring.
+
 ### Wishlist (after filtering)
 
 - Explore GraphQL and/or other **generic frontend query** approaches **once a filter/list query port exists** — reminder only: [issue #7](https://github.com/sdempsay/aether-dto-framework/issues/7) / TODO **T8**.

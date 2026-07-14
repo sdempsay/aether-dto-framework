@@ -1,5 +1,9 @@
 # Actions log
 
+## 2026-07-14 — OSGi SCR needs generated *Store interfaces
+
+- Requirement: codegen must emit `UserDtoStore extends AetherResourceStore<UserDto>` (and singleton variant) so Declarative Services can bind by concrete service type. Documented in PRD-updated; TODO T5a.
+
 ## 2026-07-14 — @Unique / @Singleton before FS provider
 
 - Added `@Unique` (group default = field name) and `@Singleton` annotations.
