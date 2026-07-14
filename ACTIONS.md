@@ -1,5 +1,11 @@
 # Actions log
 
+## 2026-07-14 — Session wrap: review + push persistence stack
+
+- Updated ACTIONS for completed T6 slices (api ports, unique/singleton, `aether-store-fs`).
+- Ran `code-review diff --base origin/master` before push.
+- Pushed local `master` commits to `origin` (GitHub).
+
 ## 2026-07-14 — aether-store-fs (Gson, fully synchronized)
 
 - New module `aether-store-fs`: `FileSystemAetherResourceStore` / `FileSystemAetherSingletonStore`.
@@ -11,12 +17,12 @@
 
 - Requirement: codegen must emit `UserDtoStore extends AetherResourceStore<UserDto>` (and singleton variant) so Declarative Services can bind by concrete service type. Documented in PRD-updated; TODO T5a.
 
-## 2026-07-14 — @Unique / @Singleton before FS provider
+## 2026-07-14 — @Unique / @Singleton (before FS provider)
 
 - Added `@Unique` (group default = field name) and `@Singleton` annotations.
 - `UniqueConstraintModel` + `UniqueIndexTable`; in-memory resource store enforces uniqueness when given a record `Class`.
 - Tests for single-field, composite unique, update/delete index lifecycle; singleton marker + store conflict.
-- FS provider still deferred until unique/singleton path is solid.
+- Followed by `aether-store-fs` implementation (see above).
 
 ## 2026-07-14 — tests.md enables JUnit via dempsay-parent
 
@@ -27,7 +33,7 @@
 - Added `aether-api` store ports: `AetherResourceStore`, `AetherSingletonStore`, envelope/metadata, `UpdateOptions`, `AetherAck`.
 - `AetherFailure` (PascalCase + httpStatus), `AetherException`, `AetherResponses`; `AetherPrincipal`.
 - Optional `AbstractAetherResourceStore`; `InMemoryAetherResourceStore` / `InMemoryAetherSingletonStore` for tests.
-- Unit tests (12) green; no FS provider yet (later `aether-store-fs`).
+- Unit tests green; FS provider landed later as `aether-store-fs`.
 
 ## 2026-07-14 — CRUD pre-flight API freezes
 
