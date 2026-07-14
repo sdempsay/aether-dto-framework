@@ -2,6 +2,7 @@ package org.aether.store.memory;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,6 +19,9 @@ import org.aether.store.AetherResourceStore;
 import org.aether.store.DefaultAetherPersisted;
 import org.aether.store.DefaultAetherResourceMetadata;
 import org.aether.store.UpdateOptions;
+import org.aether.store.unique.UniqueConstraintModel;
+import org.aether.store.unique.UniqueIndexTable;
+import org.aether.store.unique.UniqueKey;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 
@@ -26,6 +30,8 @@ import org.dempsay.utils.exceptional.api.ExceptionalResponse;
  *
  * <p>Does not require disk or a database — supports the project goal of
  * unit-testing applications against store ports without infrastructure.
+ * When constructed with a record {@link Class}, enforces {@code @Unique}
+ * constraints.
  *
  * @param <T> domain resource type
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
@@ -35,12 +41,23 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
     private final ConcurrentMap<String, AetherPersisted<T>> entries = new ConcurrentHashMap<>();
     private final Clock clock;
     private final Supplier<String> versionGenerator;
+    private final UniqueConstraintModel uniqueModel;
+    private final UniqueIndexTable uniqueIndex = new UniqueIndexTable();
 
     /**
-     * Creates a store with system UTC clock and random UUID versions.
+     * Creates a store with no uniqueness model (suitable for non-record tests).
      */
     public InMemoryAetherResourceStore() {
-        this(Clock.systemUTC(), () -> UUID.randomUUID().toString());
+        this(UniqueConstraintModel.empty(), Clock.systemUTC(), () -> UUID.randomUUID().toString());
+    }
+
+    /**
+     * Creates a store that discovers {@code @Unique} on a record type.
+     *
+     * @param type domain record class
+     */
+    public InMemoryAetherResourceStore(final Class<T> type) {
+        this(UniqueConstraintModel.forType(type), Clock.systemUTC(), () -> UUID.randomUUID().toString());
     }
 
     /**
@@ -50,9 +67,7 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
      * @param versionGenerator supplier of version etags
      */
     public InMemoryAetherResourceStore(final Clock clock, final Supplier<String> versionGenerator) {
-        super();
-        this.clock = Objects.requireNonNull(clock, "clock");
-        this.versionGenerator = Objects.requireNonNull(versionGenerator, "versionGenerator");
+        this(UniqueConstraintModel.empty(), clock, versionGenerator);
     }
 
     /**
@@ -66,7 +81,38 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
             final Supplier<String> idGenerator,
             final Clock clock,
             final Supplier<String> versionGenerator) {
+        this(UniqueConstraintModel.empty(), idGenerator, clock, versionGenerator);
+    }
+
+    /**
+     * Creates a store with an explicit unique model and defaults for id/clock/version.
+     *
+     * @param uniqueModel uniqueness model
+     * @param clock wall clock
+     * @param versionGenerator version etags
+     */
+    public InMemoryAetherResourceStore(
+            final UniqueConstraintModel uniqueModel,
+            final Clock clock,
+            final Supplier<String> versionGenerator) {
+        this(uniqueModel, () -> UUID.randomUUID().toString(), clock, versionGenerator);
+    }
+
+    /**
+     * Full constructor.
+     *
+     * @param uniqueModel uniqueness model
+     * @param idGenerator new resource ids
+     * @param clock wall clock
+     * @param versionGenerator version etags
+     */
+    public InMemoryAetherResourceStore(
+            final UniqueConstraintModel uniqueModel,
+            final Supplier<String> idGenerator,
+            final Clock clock,
+            final Supplier<String> versionGenerator) {
         super(idGenerator);
+        this.uniqueModel = Objects.requireNonNull(uniqueModel, "uniqueModel");
         this.clock = Objects.requireNonNull(clock, "clock");
         this.versionGenerator = Objects.requireNonNull(versionGenerator, "versionGenerator");
     }
@@ -77,6 +123,15 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
             final AetherPrincipal principal,
             final T resource,
             final String id) {
+        final List<UniqueKey> keys = uniqueModel.keysOf(resource);
+        final String conflictGroup = uniqueIndex.tryClaim(id, keys);
+        if (conflictGroup != null) {
+            return AetherResponses.fail(
+                    onError,
+                    AetherFailure.Conflict,
+                    "Unique constraint violated for group: " + conflictGroup);
+        }
+
         final Instant now = clock.instant();
         final String version = versionGenerator.get();
         final AetherPersisted<T> created = new DefaultAetherPersisted<>(
@@ -90,6 +145,7 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
                 resource);
         final AetherPersisted<T> previous = entries.putIfAbsent(id, created);
         if (previous != null) {
+            uniqueIndex.release(id, keys);
             return AetherResponses.fail(onError, AetherFailure.Conflict, "Resource already exists: " + id);
         }
         return ExceptionalResponse.success(created);
@@ -139,6 +195,16 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
                     "Version mismatch for: " + id);
         }
 
+        final List<UniqueKey> oldKeys = uniqueModel.keysOf(existing.resource());
+        final List<UniqueKey> newKeys = uniqueModel.keysOf(resource);
+        final String conflictGroup = uniqueIndex.reindex(id, oldKeys, newKeys);
+        if (conflictGroup != null) {
+            return AetherResponses.fail(
+                    onError,
+                    AetherFailure.Conflict,
+                    "Unique constraint violated for group: " + conflictGroup);
+        }
+
         final Instant now = clock.instant();
         final AetherPersisted<T> updated = new DefaultAetherPersisted<>(
                 new DefaultAetherResourceMetadata(
@@ -152,6 +218,7 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
 
         final boolean replaced = entries.replace(id, existing, updated);
         if (!replaced) {
+            uniqueIndex.reindex(id, newKeys, oldKeys);
             return AetherResponses.fail(
                     onError,
                     AetherFailure.Conflict,
@@ -168,7 +235,10 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
         Objects.requireNonNull(onError, "onError");
         Objects.requireNonNull(principal, "principal");
         Objects.requireNonNull(id, "id");
-        entries.remove(id);
+        final AetherPersisted<T> removed = entries.remove(id);
+        if (removed != null) {
+            uniqueIndex.release(id, uniqueModel.keysOf(removed.resource()));
+        }
         return ExceptionalResponse.success(AetherAck.INSTANCE);
     }
 }

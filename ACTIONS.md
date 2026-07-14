@@ -1,5 +1,12 @@
 # Actions log
 
+## 2026-07-14 — @Unique / @Singleton before FS provider
+
+- Added `@Unique` (group default = field name) and `@Singleton` annotations.
+- `UniqueConstraintModel` + `UniqueIndexTable`; in-memory resource store enforces uniqueness when given a record `Class`.
+- Tests for single-field, composite unique, update/delete index lifecycle; singleton marker + store conflict.
+- FS provider still deferred until unique/singleton path is solid.
+
 ## 2026-07-14 — tests.md enables JUnit via dempsay-parent
 
 - Added `aether-api/src/test/resources/tests.md` so parent profile injects junit-jupiter (removed hand-declared test deps from pom).

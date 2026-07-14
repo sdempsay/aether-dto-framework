@@ -18,6 +18,6 @@ Task tracker for Aether (`PRD.md`).
 | T3 | Collection components (`List` and related) on `@AetherRecord` DTOs | pending | [#2](https://github.com/sdempsay/aether-dto-framework/issues/2) |
 | T4 | Extensible / custom validation annotations beyond MVP set | pending | [#3](https://github.com/sdempsay/aether-dto-framework/issues/3) |
 | T5 | OSGi bundle packaging for aether modules | pending | [#4](https://github.com/sdempsay/aether-dto-framework/issues/4) |
-| T6 | Persistence layer: CRUD stores, metadata envelope, FS JSON (design in PRD-updated) | in_progress | [#5](https://github.com/sdempsay/aether-dto-framework/issues/5) — api ports + in-memory done; FS provider next |
+| T6 | Persistence layer: CRUD stores, metadata envelope, FS JSON (design in PRD-updated) | in_progress | [#5](https://github.com/sdempsay/aether-dto-framework/issues/5) — api + in-memory + @Unique/@Singleton; FS provider next |
 | T7 | Type-level validation annotations (deferred from MVP design) | pending | [#6](https://github.com/sdempsay/aether-dto-framework/issues/6) |
 | T8 | Wishlist: GraphQL / generic frontend query after filtering exists | wishlist | [#7](https://github.com/sdempsay/aether-dto-framework/issues/7) |
