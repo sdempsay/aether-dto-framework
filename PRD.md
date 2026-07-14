@@ -262,6 +262,10 @@ public final class NamedDtoBuilder implements AetherBuilder<NamedDto>, Named {
 | XML support (`@XmlElement`, etc.) | Focus on JSON + simplicity. |
 | Direct DB binding (JDBC/Hibernate) | Future work in `aether-runtime`. |
 
+### Persistence layer (post-MVP design)
+
+Agreed design for resource CRUD, metadata envelope, uniqueness, singleton types, and a filesystem JSON first backend is recorded in **`PRD-updated.md`** (section *Persistence layer design*) and tracked as [issue #5](https://github.com/sdempsay/aether-dto-framework/issues/5) / TODO **T6**. Summary: HTTP-like `create`/`read`/`update`/`delete`, store-owned `AetherResourceMetadata` (id, timestamps, random-UUID version etag required on update), `@Unique` field groups, `@Singleton` + id-free store API, first implementation as `{root}/{type}/{id}.json`.
+
 ---
 
 ## 🧪 Section 4: Validation & Error Handling
