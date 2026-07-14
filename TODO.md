@@ -20,3 +20,4 @@ Task tracker for Aether (`PRD.md`).
 | T5 | OSGi bundle packaging for aether modules | pending | [#4](https://github.com/sdempsay/aether-dto-framework/issues/4) |
 | T6 | Persistence layer: CRUD stores, metadata envelope, FS JSON (design in PRD-updated) | pending | [#5](https://github.com/sdempsay/aether-dto-framework/issues/5) |
 | T7 | Type-level validation annotations (deferred from MVP design) | pending | [#6](https://github.com/sdempsay/aether-dto-framework/issues/6) |
+| T8 | Wishlist: GraphQL / generic frontend query after filtering exists | wishlist | [#7](https://github.com/sdempsay/aether-dto-framework/issues/7) |

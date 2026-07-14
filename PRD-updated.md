@@ -317,3 +317,7 @@ Root directory is configuration (constructor / config object), not a global sing
 - `K` as `String` only in v1 vs generic.
 - Normalization for unique index keys (case folding, trimming)—default: exact string match unless annotated later.
 - Locking strategy for FS index + document consistency under concurrent processes.
+
+### Wishlist (after filtering)
+
+- Explore GraphQL and/or other **generic frontend query** approaches **once a filter/list query port exists** — reminder only: [issue #7](https://github.com/sdempsay/aether-dto-framework/issues/7) / TODO **T8**.

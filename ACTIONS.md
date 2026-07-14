@@ -1,5 +1,9 @@
 # Actions log
 
+## 2026-07-14 — Wishlist issue: query/GraphQL after filtering
+
+- Opened [issue #7](https://github.com/sdempsay/aether-dto-framework/issues/7); TODO **T8** (`wishlist`) — revisit GraphQL / generic frontend query once filters exist.
+
 ## 2026-07-14 — Persistence layer design (T6)
 
 - Wrote full CRUD/HTTP-shaped persistence design to `PRD-updated.md` (metadata envelope, version UUID, `@Unique` groups, `@Singleton`, FS JSON layout).
