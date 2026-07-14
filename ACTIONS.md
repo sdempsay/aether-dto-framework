@@ -1,5 +1,9 @@
 # Actions log
 
+## 2026-07-14 — tests.md enables JUnit via dempsay-parent
+
+- Added `aether-api/src/test/resources/tests.md` so parent profile injects junit-jupiter (removed hand-declared test deps from pom).
+
 ## 2026-07-14 — CRUD interfaces + in-memory store (T6 slice 1)
 
 - Added `aether-api` store ports: `AetherResourceStore`, `AetherSingletonStore`, envelope/metadata, `UpdateOptions`, `AetherAck`.
