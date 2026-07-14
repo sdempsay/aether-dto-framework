@@ -1,5 +1,10 @@
 # Actions log
 
+## 2026-07-14 — Issues for @AetherStoreProviders server codegen (Option A)
+
+- Opened #9 (annotation API), #8 (aether-store-gen adapters), #10 (optional SCR on generated providers).
+- TODO T5b–T5d; PRD-updated server provider codegen section.
+
 ## 2026-07-14 — T5a: generated *Store interfaces for SCR
 
 - Processor emits `{Record}Store` via `Store.java.ftl` for every `@AetherRecord`.

@@ -511,6 +511,18 @@ public interface AppConfigDtoStore extends AetherSingletonStore<AppConfigDto> {}
 
 **Not required for unit tests** that inject `AetherResourceStore<T>` directly; required for production OSGi SCR wiring.
 
+### Server provider codegen (Option A) — backlog
+
+Hand-writing `FsXStore extends FileSystem… implements XStore` does not scale to dozens of DTOs. **Server-side** generation:
+
+| Issue | Task |
+|-------|------|
+| [#9](https://github.com/sdempsay/aether-dto-framework/issues/9) | `@AetherStoreProviders` annotation API |
+| [#8](https://github.com/sdempsay/aether-dto-framework/issues/8) | `aether-store-gen`: emit Fs/Memory adapters from that annotation |
+| [#10](https://github.com/sdempsay/aether-dto-framework/issues/10) | Optional SCR `@Component` on generated adapters |
+
+Trigger lives on **server** package-info / module type (`filesystem = { MyDto.class, … }`), not on DTOs in api—so api stays free of `aether-store-fs`.
+
 ### Wishlist (after filtering)
 
 - Explore GraphQL and/or other **generic frontend query** approaches **once a filter/list query port exists** — reminder only: [issue #7](https://github.com/sdempsay/aether-dto-framework/issues/7) / TODO **T8**.
