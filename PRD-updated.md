@@ -197,13 +197,24 @@ Rationale: UUID-by-default is safe; optional natural/string keys remain availabl
 
 ```java
 // Enum constants use PascalCase (not SCREAMING_SNAKE) — project preference.
+// HTTP status is metadata on the enum (int only; no servlet/Jakarta types in aether-api).
 public enum AetherFailure {
-    Validation,   // ~400 — domain/constraint problems (may wrap ValidationException)
-    NotFound,     // ~404 — missing resource; also unauthorized read/update/delete (hide existence)
-    Conflict,     // ~409 — duplicate id, unique violation, version mismatch, singleton already exists
-    Identity,     // ~400 — path id vs body id mismatch (if applicable)
-    Forbidden,    // ~403 — optional explicit deny (e.g. create when type not allowed); prefer NotFound for read paths
-    Internal      // ~500 — backend I/O, unexpected
+    Validation(400),  // domain/constraint problems (may wrap ValidationException)
+    NotFound(404),    // missing resource; also unauthorized read/update/delete (hide existence)
+    Conflict(409),    // duplicate id, unique violation, version mismatch, singleton already exists
+    Identity(400),    // path id vs body id mismatch (if applicable)
+    Forbidden(403),   // optional explicit deny (e.g. create when type not allowed); prefer NotFound for read paths
+    Internal(500);    // backend I/O, unexpected
+
+    private final int httpStatus;
+
+    AetherFailure(final int httpStatus) {
+        this.httpStatus = httpStatus;
+    }
+
+    public int httpStatus() {
+        return httpStatus;
+    }
 }
 
 public class AetherException extends RuntimeException {
@@ -211,6 +222,8 @@ public class AetherException extends RuntimeException {
     // failure(), message, optional cause
 }
 ```
+
+Host mapping: `ex.failure().httpStatus()` (optionally with reason phrase at the edge). Core stays free of HTTP framework types.
 
 Helpers (illustrative):
 
@@ -229,7 +242,7 @@ AetherResponses.fail(onError, AetherFailure.NotFound, "UserDto/" + id);
 | Path vs body identity mismatch | `Identity` | 400 |
 | Backend I/O / unexpected | `Internal` | 500 |
 
-**Host mapping (later, not in aether-api core):** e.g. servlet/Spring layer `switch (ex.failure())` → status code. Keep the enum stable; don’t put HTTP types inside `aether-api`.
+**Host mapping:** use `failure.httpStatus()` at the servlet/Spring/MCP edge. Keep the enum stable; do **not** put Jakarta/servlet types inside `aether-api`—only the status **int** on the enum.
 
 Validation may still use existing `ValidationException`; store layer should surface it as `AetherFailure.Validation` (wrap or translate) so one switch covers persistence-facing errors.
 
@@ -390,7 +403,7 @@ Providers implement the same interfaces; they never depend on each other. OSGi l
 | Singleton | `@Singleton` + `AetherSingletonStore` (no caller id) |
 | First backend | Filesystem, one JSON file per id under `{root}/{type}/` |
 | Provider packaging | **One module/JAR/bundle per persistence provider**; `aether-runtime` stays DTO aggregator only |
-| Typed failures | `AetherFailure` + `AetherException` on the listener; map to HTTP at the host edge later |
+| Typed failures | `AetherFailure` (PascalCase + `httpStatus()` metadata) + `AetherException` on the listener |
 
 ### Open for implementation detail (non-blocking)
 

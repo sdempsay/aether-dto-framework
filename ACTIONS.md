@@ -4,6 +4,7 @@
 
 - Documented `AetherFailure` enum + `AetherException` on the exceptional listener path (no ExceptionalResponse subclass). Host maps enum → HTTP status later.
 - Enum constants are PascalCase (`NotFound`, not `NOT_FOUND`) per project preference.
+- Each constant carries `httpStatus` int metadata via enum constructor (`NotFound(404)`, `.httpStatus()`).
 
 ## 2026-07-14 — Store API: ExceptionalListener first
 
