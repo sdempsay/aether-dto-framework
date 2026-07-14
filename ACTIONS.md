@@ -1,5 +1,9 @@
 # Actions log
 
+## 2026-07-14 — High-level goal: testable without infrastructure
+
+- Called out in `PRD.md` (executive summary, core principles, anti-goals), `PRD-updated.md`, `README.md`, `AGENTS.md`: app unit tests must not require a live DB/document server; ports + swappable providers/AAA.
+
 ## 2026-07-14 — One module per persistence provider
 
 - Locked: each store backend is its own Maven module/JAR (`aether-store-fs`, later `aether-store-jdbc`, …); `aether-runtime` does not embed providers. Documented in `PRD-updated.md` / `PRD.md`.

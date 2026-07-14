@@ -2,6 +2,8 @@
 
 Aether is a minimal, annotation-driven, compile-time-generated persistence DTO layer for Java 21+. It generates validated builders for flat record DTOs with zero runtime reflection.
 
+**Design goal:** code against API ports so applications stay **unit-testable without a running database** — swap in fakes or lightweight providers (and test-friendly AAA) instead of requiring MongoDB, PostgreSQL, and the like just to run tests. See `PRD.md` core principles and `PRD-updated.md`.
+
 ## Modules
 
 | Module | Purpose |

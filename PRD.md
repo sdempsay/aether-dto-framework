@@ -16,6 +16,8 @@ You can copy/paste this into a `.md` file, commit to Git, or convert to PDF late
 
 Aether is a minimal, annotation-driven, **compile-time–generated persistence DTO layer** for Java 21+. It leverages records for immutability and JSR-269 code generation to produce validated, type-safe builders — with zero runtime reflection. Designed from day one for eventual OSGi deployment (no blocking dependencies), Aether prioritizes simplicity, safety, and performance.
 
+A **high-level goal** is that applications built on Aether’s **API ports** stay **testable without real infrastructure**: no requirement for a running database, document store, or other persistence server to unit-test app logic. Persistence providers and AAA are swappable (in-memory fakes, temp filesystem, grant-everything access control for tests).
+
 > ✅ **MVP Scope**: Flat DTOs only (no nesting/collections), Gson-compatible serialization (manual use), `@AetherRecord`, `@Nullable`, `@MinLength`, `@MaxLength`, `@RegexMatch`.
 
 ---
@@ -29,6 +31,7 @@ Aether is a minimal, annotation-driven, **compile-time–generated persistence D
 | **Zero runtime reflection** | All code is generated ahead of time → optimal performance + OSGi-compatible. |
 | **No external runtime dependencies beyond spec’d artifacts** | Runtime: `exceptional-java` only (via `aether-runtime`). Compile-time: `jsr269-utilities` + FreeMarker in `aether-builder-gen`. |
 | **Be Exceptional** | Prefer [exceptional-java](https://github.com/sdempsay/exceptional-java) over `try/catch` for failure paths — in generated builders, processor code, and consumer code. See [WhyBeExceptional.md](https://github.com/sdempsay/exceptional-java/blob/master/WhyBeExceptional.md). |
+| **Testable without infrastructure** | App code depends on API ports (builders, store interfaces, access SPI), not on a concrete DB or cloud service. Unit tests may stub or replace providers and AAA (e.g. in-memory store, allow-all policy). Requiring MongoDB, PostgreSQL, etc. solely to run unit tests is a design failure. |
 
 ---
 
@@ -346,6 +349,7 @@ Resolved during planning (2026-07):
 | No external frameworks beyond listed deps | ✅ Compliant (FreeMarker is compile-time only in `aether-builder-gen`) |
 | No runtime reflection or proxying | ✅ Compliant via codegen |
 | OSGi support deferred but design must not prevent future bundle conversion | ✅ Modular structure ensures this |
+| App unit tests must not require a running persistence server (MongoDB, etc.) | ✅ Target architecture: ports + one-module-per-provider; fakes/stubs for tests |
 
 ---
 

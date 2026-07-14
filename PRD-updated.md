@@ -1,5 +1,14 @@
 # PRD updates (learned requirements)
 
+## High-level goal: testable without infrastructure
+
+Applications written against Aether’s **API layer** (DTO annotations/builders, store ports, access-control SPI) must be **unit-testable without a running database or document store**.
+
+- Depend on **interfaces/ports**, not on MongoDB, JDBC servers, cloud SDKs, etc.
+- **Persistence providers** (`aether-store-fs`, later `aether-store-jdbc`, …) and **AAA** (e.g. allow-all for tests, real policy in prod) are **swappable**.
+- Requiring infrastructure solely to run unit tests is an **anti-goal** (“nothing worse than being locked to a contract that needs a live MongoDB for tests”).
+- Integration tests may use a real provider (e.g. temp-dir FS); unit tests should not have to.
+
 ## FreeMarker template naming
 
 - FreeMarker templates that generate Java source **must** use the extension `*.java.ftl` (e.g. `Builder.java.ftl`, `validation.java.ftl`).
