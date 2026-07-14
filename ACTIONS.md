@@ -1,5 +1,9 @@
 # Actions log
 
+## 2026-07-14 — AetherFailure for HTTP-mappable errors
+
+- Documented `AetherFailure` enum + `AetherException` on the exceptional listener path (no ExceptionalResponse subclass). Host maps enum → HTTP status later.
+
 ## 2026-07-14 — Store API: ExceptionalListener first
 
 - Convention: `onError` is always the first parameter on store/new multi-arg APIs (varargs last). Documented in `PRD-updated.md`.

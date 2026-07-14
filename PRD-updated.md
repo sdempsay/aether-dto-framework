@@ -189,19 +189,50 @@ Rationale: UUID-by-default is safe; optional natural/string keys remain availabl
 | Create, id already exists | **Conflict** |
 | Update, version mismatch | **Conflict** |
 
-### Failure taxonomy (HTTP-inspired)
+### Failure taxonomy (HTTP-mappable)
 
-Delivered via `ExceptionalListener` / failure `ExceptionalResponse` (names illustrative):
+`ExceptionalResponse` is a **record** and cannot be subclassed; failures stay `ExceptionalResponse.failure()` with detail on the **`ExceptionalListener`**. Aether therefore defines a **typed failure** the listener receives (and hosts can map to HTTP later).
 
-| Situation | ~HTTP | Type (proposed) |
-|-----------|-------|-----------------|
-| Domain validation failed before I/O | 400 | existing `ValidationException` |
-| Resource not found | 404 | `ResourceNotFoundException` |
-| Id exists on create / unique constraint / version mismatch | 409 | `ResourceConflictException` |
-| Path id vs body identity mismatch (if applicable) | 400 | `ResourceIdentityException` |
-| Backend I/O failure | 500 | wrapped in exceptional failure path |
+#### `AetherFailure` (enum) + `AetherException` (or `AetherStoreException`)
 
-Validation remains the builder’s job when constructing `T`; the store assumes `T` is a valid domain value (or re-validates if we later accept builders).
+```java
+public enum AetherFailure {
+    VALIDATION,   // ~400 — domain/constraint problems (may wrap ValidationException)
+    NOT_FOUND,    // ~404 — missing resource; also unauthorized read/update/delete (hide existence)
+    CONFLICT,     // ~409 — duplicate id, unique violation, version mismatch, singleton already exists
+    IDENTITY,     // ~400 — path id vs body id mismatch (if applicable)
+    FORBIDDEN,    // ~403 — optional explicit deny (e.g. create when type not allowed); prefer NOT_FOUND for read paths
+    INTERNAL      // ~500 — backend I/O, unexpected
+}
+
+public class AetherException extends RuntimeException {
+    private final AetherFailure failure;
+    // failure(), message, optional cause
+}
+```
+
+Helpers (illustrative):
+
+```java
+// onError first; returns ExceptionalResponse.failure() after notifying listener
+AetherResponses.fail(onError, AetherFailure.NOT_FOUND, "UserDto/" + id);
+```
+
+| Situation | `AetherFailure` | Typical HTTP (host mapping) |
+|-----------|-----------------|----------------------------|
+| Domain validation failed | `VALIDATION` | 400 |
+| Resource missing | `NOT_FOUND` | 404 |
+| Unauthorized read/update/delete (hide existence) | `NOT_FOUND` | 404 |
+| Unauthorized create / explicit deny | `FORBIDDEN` | 403 |
+| Duplicate id / unique / version / singleton exists | `CONFLICT` | 409 |
+| Path vs body identity mismatch | `IDENTITY` | 400 |
+| Backend I/O / unexpected | `INTERNAL` | 500 |
+
+**Host mapping (later, not in aether-api core):** e.g. servlet/Spring layer `switch (ex.failure())` → status code. Keep the enum stable; don’t put HTTP types inside `aether-api`.
+
+Validation may still use existing `ValidationException`; store layer should surface it as `AetherFailure.VALIDATION` (wrap or translate) so one switch covers persistence-facing errors.
+
+Store code returns plain `ExceptionalResponse.success(...)` / `failure()`; it does **not** invent a subclass of `ExceptionalResponse`.
 
 ### Field uniqueness
 
@@ -356,6 +387,7 @@ Providers implement the same interfaces; they never depend on each other. OSGi l
 | Singleton | `@Singleton` + `AetherSingletonStore` (no caller id) |
 | First backend | Filesystem, one JSON file per id under `{root}/{type}/` |
 | Provider packaging | **One module/JAR/bundle per persistence provider**; `aether-runtime` stays DTO aggregator only |
+| Typed failures | `AetherFailure` + `AetherException` on the listener; map to HTTP at the host edge later |
 
 ### Open for implementation detail (non-blocking)
 
