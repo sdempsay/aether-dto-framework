@@ -1,5 +1,12 @@
 # Actions log
 
+## 2026-07-14 — aether-store-fs (Gson, fully synchronized)
+
+- New module `aether-store-fs`: `FileSystemAetherResourceStore` / `FileSystemAetherSingletonStore`.
+- Layout `{root}/{type}/{id}.json` and `_singleton.json`; envelope JSON via Gson 2.11.0.
+- Store-wide lock for thread-safe prototype use; unique index rebuilt on open; atomic temp+move writes.
+- User approved Gson as provider dependency.
+
 ## 2026-07-14 — OSGi SCR needs generated *Store interfaces
 
 - Requirement: codegen must emit `UserDtoStore extends AetherResourceStore<UserDto>` (and singleton variant) so Declarative Services can bind by concrete service type. Documented in PRD-updated; TODO T5a.

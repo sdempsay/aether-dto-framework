@@ -60,6 +60,7 @@ public final class UniqueConstraintModel {
                     ? component.getName()
                     : unique.group();
             final Method accessor = component.getAccessor();
+            accessor.setAccessible(true);
             byGroup.computeIfAbsent(groupName, ignored -> new ArrayList<>())
                     .add(new Accessor(component.getName(), accessor));
         }

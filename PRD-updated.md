@@ -386,16 +386,19 @@ public interface AetherSingletonStore<T> {
 
 Processor should reject nonsensical combinations (e.g. treating a `@Singleton` type as a multi-id collection store). Field `@Unique` on a singleton type is largely redundant (0 or 1 row) but harmless.
 
-### First backend: filesystem JSON
+### First backend: filesystem JSON (`aether-store-fs`)
 
 | Item | Choice |
 |------|--------|
-| Format | One **raw JSON** document per resource (domain body + metadata envelope serialized together, exact JSON shape TBD in implementation) |
+| Module | **`aether-store-fs`** (separate provider JAR); depends on `aether-api` + **Gson 2.11.0** (approved) |
+| Format | Envelope JSON: `{ "metadata": { id, createdAt, updatedAt, version, createdBy, updatedBy }, "resource": { ... } }` |
 | Multi-resource path | `{root}/{resourceType}/{id}.json` |
-| Singleton path | `{root}/{resourceType}/_singleton.json` (or equivalent single well-known file) |
-| Unique indexes | e.g. `{root}/{resourceType}/_unique/{group}/{encodedValues}` → id (create-exclusive / atomic replace as available) |
+| Singleton path | `{root}/{resourceType}/_singleton.json` |
+| Unique indexes | In-memory `UniqueIndexTable` rebuilt by scanning JSON on open (under store lock); not separate on-disk index files in v1 |
+| Thread safety | **Store-wide `synchronized` lock** on all ops — correct for multi-thread prototypes; may be slow under load |
+| Writes | Temp file + move (atomic when supported) |
 
-Root directory is configuration (constructor / config object), not a global singleton static.
+Root directory is configuration (constructor), not a global static.
 
 ### Module placement (target)
 
