@@ -1,6 +1,33 @@
 # Agent Notes
 
-Guidance for AI agents working in this repository.
+Guidance for AI agents working in this repository. Global rules in `~/.grok/AGENTS.md` also apply; where they conflict on VCS, **this repo uses GitHub**.
+
+## VCS
+
+- Remote: [sdempsay/aether-dto-framework](https://github.com/sdempsay/aether-dto-framework)
+- Use `gh` (not `glab`) for issues and PRs
+- Prefer PRs over direct-only workflows when shipping backlog items linked to issues
+
+## Backlog (TODO.md + GitHub Issues)
+
+Hybrid tracker (same pattern as review-pipeline):
+
+- **`TODO.md`** — thin index: task ID, status, issue link (offline-friendly)
+- **GitHub Issues** — acceptance criteria, design, discussion ([open issues](https://github.com/sdempsay/aether-dto-framework/issues))
+- **`ACTIONS.md`** — work log when tasks ship
+
+**When starting work:** read TODO row → `gh issue view N` for full context (when network available).
+
+**When shipping:** PR with `Fixes #N` → issue closes → mark TODO `complete` → one line in `ACTIONS.md`.
+
+**When adding work:** open a GitHub issue (body = acceptance criteria) → add a TODO row with status `pending` and the issue link. Do not put long design notes only in `TODO.md`.
+
+## Session start
+
+- Read `TODO.md` for task status
+- For pending tasks with issue links, read the issue (`gh issue view N`) for acceptance criteria
+- Read `PRD.md` and `PRD-updated.md` for requirements
+- Read `~/.grok/rules/maven.md` (this project has `pom.xml`)
 
 ## Exceptional error handling
 
