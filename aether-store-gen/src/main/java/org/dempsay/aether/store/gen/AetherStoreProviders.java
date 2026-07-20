@@ -95,8 +95,9 @@ public @interface AetherStoreProviders {
      * generated adapter ({@code @Component}, {@code @Activate}). Default
      * {@code false} for non-OSGi / pure unit-test servers.
      *
-     * <p>Filesystem adapters activated via SCR expect component property
-     * {@code root} (string path). Memory adapters use a no-arg activate ctor.
+     * <p>Filesystem adapters activated via SCR take {@code @Reference FileStoreConfig}
+     * and use {@code location()} as the storage root. Memory adapters use a no-arg
+     * activate ctor.
      *
      * @return whether to generate SCR annotations
      */

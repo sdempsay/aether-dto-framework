@@ -1,9 +1,15 @@
 # Actions log
 
+## 2026-07-20 — FileStoreConfig + SCR @Reference for FS adapters
+
+- API: `FileStoreConfig` (`location()`, default `aetherFileStore`).
+- FS module: `FileStoreConfigService` (Config Admin / metatype optional PID).
+- Generated `scr=true` FS adapters use `@Activate (@Reference FileStoreConfig config)` instead of Map/`root` property.
+
 ## 2026-07-20 — T5d: optional SCR on generated providers
 
 - `@AetherStoreProviders(scr = true)` emits `@Component(service = XStore.class)` + `@Activate`.
-- FS: SCR ctor `Map` + property `root`; keeps `Path` ctor. Memory: no-arg `@Activate`.
+- FS: SCR via `FileStoreConfig` `@Reference` (was Map/`root`); keeps `Path` ctor. Memory: no-arg `@Activate`.
 - Default `scr = false` for non-OSGi. Docs + tests. Closes #10.
 
 ## 2026-07-20 — T5c: store provider adapter codegen

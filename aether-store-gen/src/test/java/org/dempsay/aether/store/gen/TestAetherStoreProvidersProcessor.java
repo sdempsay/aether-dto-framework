@@ -92,10 +92,12 @@ class TestAetherStoreProvidersProcessor {
                 outputDir.resolve("fixtures/server/scr/FsMyDtoStore.java").toFile()).response();
         assertTrue(fsSource.contains("import org.osgi.service.component.annotations.Activate;"));
         assertTrue(fsSource.contains("import org.osgi.service.component.annotations.Component;"));
+        assertTrue(fsSource.contains("import org.osgi.service.component.annotations.Reference;"));
+        assertTrue(fsSource.contains("import org.dempsay.aether.store.config.FileStoreConfig;"));
         assertTrue(fsSource.contains("@Component(service = MyDtoStore.class)"));
         assertTrue(fsSource.contains("@Activate"));
-        assertTrue(fsSource.contains("Map<String, ?> properties"));
-        assertTrue(fsSource.contains("properties.get(\"root\")"));
+        assertTrue(fsSource.contains("@Reference final FileStoreConfig config"));
+        assertTrue(fsSource.contains("Path.of(config.location())"));
         assertTrue(fsSource.contains("public FsMyDtoStore(final Path root)"));
 
         final String memSource = readFile(

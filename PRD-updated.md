@@ -564,7 +564,7 @@ package com.example.product.server.stores;
 - Target: `PACKAGE` or `TYPE` — **server** package-info / marker type, **not** DTO records in api.
 - Rules (processor): each type `@AetherRecord` record; `singletonFilesystem` → `@Singleton`; multi lists must not include `@Singleton`; at least one list non-empty.
 - Generated: `Fs{Record}Store extends FileSystem… implements {Record}Store` (ctor `Path root`); `Memory{Record}Store extends InMemory…(Class)` for multi-resource memory.
-- **`scr = true`:** emit `@Component(service = XStore.class)` + `@Activate`. FS activate takes `Map` with property `root` (string path); also keeps `Path` ctor for non-SCR. Memory uses no-arg `@Activate`. Server needs OSGi DS annotations on the classpath (e.g. dempsay-felix-parent).
+- **`scr = true`:** emit `@Component(service = XStore.class)` + `@Activate`. FS activate is `@Reference FileStoreConfig` → `Path.of(config.location())`; also keeps `Path` ctor for non-SCR. Memory uses no-arg `@Activate`. API: `org.dempsay.aether.store.config.FileStoreConfig`; default FS service: `FileStoreConfigService` in `aether-store-fs`.
 - Provider store classes are **non-final** so adapters can extend them.
 - Keeps api free of `aether-store-fs` and free of OSGi imports.
 

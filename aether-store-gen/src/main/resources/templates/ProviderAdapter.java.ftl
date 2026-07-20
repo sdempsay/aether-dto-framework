@@ -3,12 +3,13 @@ package ${packageName};
 <#if needsPath>
 import java.nio.file.Path;
 <#if scr>
-import java.util.Map;
-import java.util.Objects;
 
+import org.dempsay.aether.store.config.FileStoreConfig;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 </#if>
-</#if>
-<#if scr>
+<#elseif scr>
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 
@@ -31,13 +32,13 @@ public class ${adapterSimpleName} extends ${superClassSimpleName}<${recordSimple
 <#if needsPath>
 <#if scr>
     /**
-     * SCR activation: component property {@code root} (string) is the storage root.
+     * SCR activation: injects {@link FileStoreConfig} for the storage root.
      *
-     * @param properties DS component properties
+     * @param config filesystem store configuration service
      */
     @Activate
-    public ${adapterSimpleName}(final Map<String, ?> properties) {
-        this(Path.of(Objects.requireNonNull(properties.get("root"), "root").toString()));
+    public ${adapterSimpleName}(@Reference final FileStoreConfig config) {
+        this(Path.of(config.location()));
     }
 
 </#if>

@@ -298,7 +298,7 @@ Java EE requirement: **JavaSE 21** (`Require-Capability: osgi.ee`).
    ```
 
    Prefer type-based DS references (`@Reference UserDtoStore`) over raw `AetherResourceStore<UserDto>` where SCR erasure is painful.
-6. **Provider adapters:** declare types with **`@AetherStoreProviders`** on a **server** `package-info` / marker type and register **`aether-store-gen`** on `annotationProcessorPaths` (plus `aether-store-fs` on the server compile classpath). Generates `Fs{Record}Store` / `Memory{Record}Store`. Set **`scr = true`** to emit OSGi DS `@Component` / `@Activate` (server needs OSGi component annotations; FS components need property `root`).
+6. **Provider adapters:** declare types with **`@AetherStoreProviders`** on a **server** `package-info` / marker type and register **`aether-store-gen`** on `annotationProcessorPaths` (plus `aether-store-fs` on the server compile classpath). Generates `Fs{Record}Store` / `Memory{Record}Store`. Set **`scr = true`** to emit OSGi DS `@Component` / `@Activate` with **`@Reference FileStoreConfig`** for FS roots (publish `FileStoreConfig`, e.g. `FileStoreConfigService` in `aether-store-fs`).
 7. **Do not unpack / shade `aether-api` into the consumer jar** once proper Export-Package is available. Older `aether-test` unpack hacks were workarounds for pre-bundle aether; prefer Import-Package resolution.
 8. FS stack at runtime: install **`aether-api`**, **`exceptional`**, **`aether-store-fs`**, and a **Gson** bundle that exports `com.google.gson` (and stream packages if required).
 
@@ -410,7 +410,7 @@ import org.dempsay.aether.store.gen.AetherStoreProviders;
 ```
 
 Emits (same package): `FsUserDtoStore`, `FsAppConfigDtoStore`, `MemoryUserDtoStore`.  
-With `scr = true`, each gets `@Component(service = …Store.class)` and `@Activate`. Configure FS components with property **`root`** (filesystem path string).  
+With `scr = true`, each gets `@Component(service = …Store.class)` and `@Activate`. FS adapters inject **`FileStoreConfig`** via `@Reference` (`location()` → store root). Ship a `FileStoreConfig` service (e.g. `aether-store-fs` `FileStoreConfigService` + Config Admin).  
 Do **not** put this annotation on api DTO packages. Parent server modules from **dempsay-felix-parent** (or add `org.osgi.service.component.annotations` as provided).
 
 ## Agent checklist (consuming Aether)
