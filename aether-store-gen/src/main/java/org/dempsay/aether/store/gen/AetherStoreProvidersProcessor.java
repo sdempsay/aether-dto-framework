@@ -27,8 +27,8 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-import org.dempsay.aether.annotations.AetherRecord;
-import org.dempsay.aether.annotations.Singleton;
+import org.dempsay.aether.api.annotations.AetherRecord;
+import org.dempsay.aether.api.annotations.Singleton;
 import org.dempsay.support.jsr269.annotation.Jsr269Processor;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResourceAction;

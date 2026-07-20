@@ -39,7 +39,7 @@ final class StoredDocument {
     }
 
     /**
-     * Wire format for {@link org.dempsay.aether.store.api.AetherResourceMetadata}.
+     * Wire format for {@link org.dempsay.aether.api.store.AetherResourceMetadata}.
      */
     static final class StoredMetadata {
         private String id;

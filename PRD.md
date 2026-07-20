@@ -282,7 +282,7 @@ Aether uses [exceptional-java](https://github.com/sdempsay/exceptional-java) for
 **Project rule**: Unless there is a specific reason to use `try/catch` (e.g. inside `ExceptionalSupplier.of(() -> ...)` where the library owns the catch), Aether code uses `ExceptionalSupplier`, `ExceptionalAction`, and `ExceptionalResponse`.
 
 ### Exception Types
-- `ValidationException` in `aether-api` (`org.dempsay.aether.validation.ValidationException`, extends `RuntimeException`)
+- `ValidationException` in `aether-api` (`org.dempsay.aether.api.validation.ValidationException`, extends `RuntimeException`)
   → Contains list of error messages via `getErrors()` returning `List<String>`.
 
 ### Builder Contract
@@ -437,7 +437,7 @@ Child module example (no versions on managed deps):
 
 ```java
 // aether-api/src/main/java/org/aether/annotations/
-package org.dempsay.aether.annotations;
+package org.dempsay.aether.api.annotations;
 
 import java.lang.annotation.*;
 
@@ -485,7 +485,7 @@ public final class ${builderName} implements AetherBuilder<${recordName}><#if vi
 
 ```java
 // aether-api/src/main/java/org/aether/validation/
-package org.dempsay.aether.validation;
+package org.dempsay.aether.api.validation;
 
 import java.util.List;
 

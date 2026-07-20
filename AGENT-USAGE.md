@@ -139,13 +139,13 @@ Aether is a **compile-time–generated** DTO + persistence-port layer for **Java
 ```java
 package org.example.api;
 
-import org.dempsay.aether.annotations.AetherRecord;
-import org.dempsay.aether.annotations.MaxLength;
-import org.dempsay.aether.annotations.MinLength;
-import org.dempsay.aether.annotations.Nullable;
-import org.dempsay.aether.annotations.RegexMatch;
-import org.dempsay.aether.annotations.Singleton;
-import org.dempsay.aether.annotations.Unique;
+import org.dempsay.aether.api.annotations.AetherRecord;
+import org.dempsay.aether.api.annotations.MaxLength;
+import org.dempsay.aether.api.annotations.MinLength;
+import org.dempsay.aether.api.annotations.Nullable;
+import org.dempsay.aether.api.annotations.RegexMatch;
+import org.dempsay.aether.api.annotations.Singleton;
+import org.dempsay.aether.api.annotations.Unique;
 
 @AetherRecord
 public record UserDto(
@@ -235,7 +235,7 @@ No filter, pagination, or query language on `list` (see wishlist T8 / issue #7).
 ### In-memory (tests / smoke)
 
 ```java
-import org.dempsay.aether.access.AetherPrincipal;
+import org.dempsay.aether.api.access.AetherPrincipal;
 import org.dempsay.aether.store.memory.InMemoryAetherResourceStore;
 
 InMemoryAetherResourceStore<UserDto> store =
@@ -269,7 +269,7 @@ Aether jars are built with **`dempsay-felix-parent`** (bnd). Use this section wh
 
 | Artifact | Bundle-SymbolicName | Export-Package | Install in framework? |
 |----------|---------------------|----------------|------------------------|
-| `aether-api` | `org.dempsay.aether.aether-api` | `…access`, `…annotations`, `…builder`, `…failure`, `…store.api` (+ subpackages), `…store.memory`, `…validation` | **Yes** |
+| `aether-api` | `org.dempsay.aether.aether-api` | `org.dempsay.aether.api.*` (+ `store.memory` fakes) | **Yes** |
 | `aether-store-fs` | `org.dempsay.aether.aether-store-fs` | `org.dempsay.aether.store.fs` | **Yes**, if using FS |
 | `exceptional` | (exceptional’s BSN) | exceptional API packages | **Yes** (api imports it) |
 | Gson | third-party OSGi jar | `com.google.gson` | **Yes**, if using `aether-store-fs` |

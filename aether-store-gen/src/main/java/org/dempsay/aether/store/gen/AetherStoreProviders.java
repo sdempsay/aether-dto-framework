@@ -58,8 +58,8 @@ import java.lang.annotation.Target;
  *
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 1.0.0
- * @see org.dempsay.aether.annotations.AetherRecord
- * @see org.dempsay.aether.annotations.Singleton
+ * @see org.dempsay.aether.api.annotations.AetherRecord
+ * @see org.dempsay.aether.api.annotations.Singleton
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)

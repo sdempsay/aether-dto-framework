@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 </#if>
 
-import org.dempsay.aether.builder.AetherBuilder;
-import org.dempsay.aether.validation.ValidationException;
+import org.dempsay.aether.api.builder.AetherBuilder;
+import org.dempsay.aether.api.validation.ValidationException;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 <#list viewInterfaces as v>

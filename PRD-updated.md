@@ -3,7 +3,7 @@
 ## Maven coordinates and package namespace
 
 - **groupId:** `org.dempsay.aether` (not bare `org.aether`).
-- **Java packages:** `org.dempsay.aether.*` with **store API** under `org.dempsay.aether.store.api` (ports, config, unique helpers); providers under `store.memory` / `store.fs` / `store.gen`.
+- **Java packages:** public contracts under **`org.dempsay.aether.api.*`** (`api.annotations`, `api.access`, `api.builder`, `api.failure`, `api.validation`, `api.store`, `api.store.config`, `api.store.unique`). Implementations: `store.memory`, `store.fs`, `store.gen`.
 - **Artifact IDs:** `aether`, `aether-api`, `aether-builder-gen`, `aether-runtime`, `aether-store-fs` (module names unchanged).
 - **Version:** `1.1.0-SNAPSHOT` (post-rename baseline).
 - Rationale: match dempsay reverse-DNS (`org.dempsay.utils`, `org.dempsay.support.jsr269`, consumer `org.dempsay.aether.test`); avoid collision/confusion with historical Maven/Eclipse Aether.
@@ -564,7 +564,7 @@ package com.example.product.server.stores;
 - Target: `PACKAGE` or `TYPE` — **server** package-info / marker type, **not** DTO records in api.
 - Rules (processor): each type `@AetherRecord` record; `singletonFilesystem` → `@Singleton`; multi lists must not include `@Singleton`; at least one list non-empty.
 - Generated: `Fs{Record}Store extends FileSystem… implements {Record}Store` (ctor `Path root`); `Memory{Record}Store extends InMemory…(Class)` for multi-resource memory.
-- **`scr = true`:** emit `@Component(service = XStore.class)` + `@Activate`. FS activate is `@Reference FileStoreConfig` → `Path.of(config.location())`; also keeps `Path` ctor for non-SCR. Memory uses no-arg `@Activate`. API: `org.dempsay.aether.store.api.config.FileStoreConfig`; default FS service: `FileStoreConfigService` in `aether-store-fs`.
+- **`scr = true`:** emit `@Component(service = XStore.class)` + `@Activate`. FS activate is `@Reference FileStoreConfig` → `Path.of(config.location())`; also keeps `Path` ctor for non-SCR. Memory uses no-arg `@Activate`. API: `org.dempsay.aether.api.store.config.FileStoreConfig`; default FS service: `FileStoreConfigService` in `aether-store-fs`.
 - Provider store classes are **non-final** so adapters can extend them.
 - Keeps api free of `aether-store-fs` and free of OSGi imports.
 

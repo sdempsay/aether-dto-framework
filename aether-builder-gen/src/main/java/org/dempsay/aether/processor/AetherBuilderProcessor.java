@@ -31,12 +31,12 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-import org.dempsay.aether.annotations.AetherRecord;
-import org.dempsay.aether.annotations.MaxLength;
-import org.dempsay.aether.annotations.MinLength;
-import org.dempsay.aether.annotations.Nullable;
-import org.dempsay.aether.annotations.RegexMatch;
-import org.dempsay.aether.annotations.Singleton;
+import org.dempsay.aether.api.annotations.AetherRecord;
+import org.dempsay.aether.api.annotations.MaxLength;
+import org.dempsay.aether.api.annotations.MinLength;
+import org.dempsay.aether.api.annotations.Nullable;
+import org.dempsay.aether.api.annotations.RegexMatch;
+import org.dempsay.aether.api.annotations.Singleton;
 import org.dempsay.support.jsr269.annotation.Jsr269Processor;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResourceAction;
@@ -51,7 +51,7 @@ import org.dempsay.utils.exceptional.api.ExceptionalSupplier;
  * @since 1.0.0
  */
 @Jsr269Processor
-@SupportedAnnotationTypes("org.dempsay.aether.annotations.AetherRecord")
+@SupportedAnnotationTypes("org.dempsay.aether.api.annotations.AetherRecord")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class AetherBuilderProcessor extends AbstractProcessor {
     private static final Set<String> BOXED_PRIMITIVES = Set.of(

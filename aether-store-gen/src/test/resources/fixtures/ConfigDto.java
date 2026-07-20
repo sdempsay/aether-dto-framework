@@ -1,8 +1,8 @@
 package fixtures;
 
-import org.dempsay.aether.annotations.AetherRecord;
-import org.dempsay.aether.annotations.MinLength;
-import org.dempsay.aether.annotations.Singleton;
+import org.dempsay.aether.api.annotations.AetherRecord;
+import org.dempsay.aether.api.annotations.MinLength;
+import org.dempsay.aether.api.annotations.Singleton;
 
 @AetherRecord
 @Singleton

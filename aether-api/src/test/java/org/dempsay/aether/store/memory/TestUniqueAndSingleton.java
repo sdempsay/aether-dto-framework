@@ -6,12 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.dempsay.aether.access.AetherPrincipal;
-import org.dempsay.aether.annotations.Singleton;
-import org.dempsay.aether.failure.AetherException;
-import org.dempsay.aether.failure.AetherFailure;
-import org.dempsay.aether.store.api.AetherPersisted;
-import org.dempsay.aether.store.api.UpdateOptions;
+import org.dempsay.aether.api.access.AetherPrincipal;
+import org.dempsay.aether.api.annotations.Singleton;
+import org.dempsay.aether.api.failure.AetherException;
+import org.dempsay.aether.api.failure.AetherFailure;
+import org.dempsay.aether.api.store.AetherPersisted;
+import org.dempsay.aether.api.store.UpdateOptions;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

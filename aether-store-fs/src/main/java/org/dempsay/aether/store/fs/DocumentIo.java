@@ -9,9 +9,9 @@ import java.nio.file.StandardOpenOption;
 
 import com.google.gson.Gson;
 
-import org.dempsay.aether.failure.AetherException;
-import org.dempsay.aether.failure.AetherFailure;
-import org.dempsay.aether.store.api.AetherAck;
+import org.dempsay.aether.api.failure.AetherException;
+import org.dempsay.aether.api.failure.AetherFailure;
+import org.dempsay.aether.api.store.AetherAck;
 import org.dempsay.aether.store.fs.StoredDocument.StoredMetadata;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 import org.dempsay.utils.exceptional.api.ExceptionalResource;
@@ -83,7 +83,7 @@ final class DocumentIo {
         return Files.isRegularFile(path);
     }
 
-    static StoredMetadata toWire(final org.dempsay.aether.store.api.AetherResourceMetadata metadata) {
+    static StoredMetadata toWire(final org.dempsay.aether.api.store.AetherResourceMetadata metadata) {
         return new StoredMetadata(
                 metadata.id(),
                 metadata.createdAt(),

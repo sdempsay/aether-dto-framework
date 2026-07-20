@@ -93,7 +93,7 @@ class TestAetherStoreProvidersProcessor {
         assertTrue(fsSource.contains("import org.osgi.service.component.annotations.Activate;"));
         assertTrue(fsSource.contains("import org.osgi.service.component.annotations.Component;"));
         assertTrue(fsSource.contains("import org.osgi.service.component.annotations.Reference;"));
-        assertTrue(fsSource.contains("import org.dempsay.aether.store.api.config.FileStoreConfig;"));
+        assertTrue(fsSource.contains("import org.dempsay.aether.api.store.config.FileStoreConfig;"));
         assertTrue(fsSource.contains("@Component(service = MyDtoStore.class)"));
         assertTrue(fsSource.contains("@Activate"));
         assertTrue(fsSource.contains("@Reference final FileStoreConfig config"));

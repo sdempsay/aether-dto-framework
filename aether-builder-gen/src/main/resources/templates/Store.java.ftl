@@ -1,9 +1,9 @@
 package ${packageName};
 
 <#if singleton>
-import org.dempsay.aether.store.api.AetherSingletonStore;
+import org.dempsay.aether.api.store.AetherSingletonStore;
 <#else>
-import org.dempsay.aether.store.api.AetherResourceStore;
+import org.dempsay.aether.api.store.AetherResourceStore;
 </#if>
 
 /**

@@ -1,7 +1,7 @@
 package org.dempsay.aether.store.memory;
 
-import org.dempsay.aether.annotations.AetherRecord;
-import org.dempsay.aether.annotations.Unique;
+import org.dempsay.aether.api.annotations.AetherRecord;
+import org.dempsay.aether.api.annotations.Unique;
 
 /**
  * Test record with single-field and composite uniqueness.

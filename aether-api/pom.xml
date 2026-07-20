@@ -15,7 +15,8 @@
 
   <properties>
     <!-- Public API + in-memory fakes for OSGi consumers (dempsay-felix-parent -exportcontents) -->
-    <felix.bundle.exportcontents>org.dempsay.aether.access,org.dempsay.aether.annotations,org.dempsay.aether.builder,org.dempsay.aether.failure,org.dempsay.aether.store.api,org.dempsay.aether.store.api.*,org.dempsay.aether.store.memory,org.dempsay.aether.store.memory.*,org.dempsay.aether.validation</felix.bundle.exportcontents>
+    <!-- Public contracts under api.*; in-memory fakes stay store.memory -->
+    <felix.bundle.exportcontents>org.dempsay.aether.api,org.dempsay.aether.api.*,org.dempsay.aether.store.memory,org.dempsay.aether.store.memory.*</felix.bundle.exportcontents>
   </properties>
 
   <dependencies>

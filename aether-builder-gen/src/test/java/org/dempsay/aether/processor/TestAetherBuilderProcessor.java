@@ -26,7 +26,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-import org.dempsay.aether.validation.ValidationException;
+import org.dempsay.aether.api.validation.ValidationException;
 import org.dempsay.utils.exceptional.api.ExceptionalResource;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +68,7 @@ public class TestAetherBuilderProcessor {
         assertTrue(storeFile.exists(), "Store interface should be generated");
 
         final String source = readFile(storeFile).response();
-        assertTrue(source.contains("import org.dempsay.aether.store.api.AetherResourceStore;"));
+        assertTrue(source.contains("import org.dempsay.aether.api.store.AetherResourceStore;"));
         assertTrue(source.contains("public interface MyDtoStore extends AetherResourceStore<MyDto>"));
         assertFalse(source.contains("AetherSingletonStore"));
     }
@@ -81,7 +81,7 @@ public class TestAetherBuilderProcessor {
         assertTrue(storeFile.exists(), "Singleton store interface should be generated");
 
         final String source = readFile(storeFile).response();
-        assertTrue(source.contains("import org.dempsay.aether.store.api.AetherSingletonStore;"));
+        assertTrue(source.contains("import org.dempsay.aether.api.store.AetherSingletonStore;"));
         assertTrue(source.contains("public interface ConfigDtoStore extends AetherSingletonStore<ConfigDto>"));
         assertFalse(source.contains("AetherResourceStore"));
         assertTrue(outputDir.resolve("fixtures/ConfigDtoBuilder.java").toFile().exists());
