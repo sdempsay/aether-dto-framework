@@ -38,8 +38,10 @@ class TestAetherStoreProviders {
         assertNotNull(AetherStoreProviders.class.getMethod("filesystem"));
         assertNotNull(AetherStoreProviders.class.getMethod("singletonFilesystem"));
         assertNotNull(AetherStoreProviders.class.getMethod("memory"));
+        assertNotNull(AetherStoreProviders.class.getMethod("scr"));
         assertEquals(Class[].class, AetherStoreProviders.class.getMethod("filesystem").getReturnType());
         assertEquals(Class[].class, AetherStoreProviders.class.getMethod("singletonFilesystem").getReturnType());
         assertEquals(Class[].class, AetherStoreProviders.class.getMethod("memory").getReturnType());
+        assertEquals(boolean.class, AetherStoreProviders.class.getMethod("scr").getReturnType());
     }
 }

@@ -546,7 +546,7 @@ Hand-writing `FsXStore extends FileSystem… implements XStore` does not scale t
 |-------|------|--------|
 | [#9](https://github.com/sdempsay/aether-dto-framework/issues/9) | `@AetherStoreProviders` annotation API | **Done** — `org.dempsay.aether.store.gen.AetherStoreProviders` in `aether-store-gen` |
 | [#8](https://github.com/sdempsay/aether-dto-framework/issues/8) | `aether-store-gen` processor: emit Fs/Memory adapters | **Done** (T5c) — `Fs{Record}Store` / `Memory{Record}Store` |
-| [#10](https://github.com/sdempsay/aether-dto-framework/issues/10) | Optional SCR `@Component` on generated adapters | pending (T5d) |
+| [#10](https://github.com/sdempsay/aether-dto-framework/issues/10) | Optional SCR `@Component` on generated adapters | **Done** (T5d) — `scr = true` |
 
 **Annotation (T5b):**
 
@@ -564,8 +564,9 @@ package com.example.product.server.stores;
 - Target: `PACKAGE` or `TYPE` — **server** package-info / marker type, **not** DTO records in api.
 - Rules (processor): each type `@AetherRecord` record; `singletonFilesystem` → `@Singleton`; multi lists must not include `@Singleton`; at least one list non-empty.
 - Generated: `Fs{Record}Store extends FileSystem… implements {Record}Store` (ctor `Path root`); `Memory{Record}Store extends InMemory…(Class)` for multi-resource memory.
+- **`scr = true`:** emit `@Component(service = XStore.class)` + `@Activate`. FS activate takes `Map` with property `root` (string path); also keeps `Path` ctor for non-SCR. Memory uses no-arg `@Activate`. Server needs OSGi DS annotations on the classpath (e.g. dempsay-felix-parent).
 - Provider store classes are **non-final** so adapters can extend them.
-- Keeps api free of `aether-store-fs`.
+- Keeps api free of `aether-store-fs` and free of OSGi imports.
 
 ### Wishlist (after filtering)
 

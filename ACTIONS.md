@@ -1,5 +1,11 @@
 # Actions log
 
+## 2026-07-20 — T5d: optional SCR on generated providers
+
+- `@AetherStoreProviders(scr = true)` emits `@Component(service = XStore.class)` + `@Activate`.
+- FS: SCR ctor `Map` + property `root`; keeps `Path` ctor. Memory: no-arg `@Activate`.
+- Default `scr = false` for non-OSGi. Docs + tests. Closes #10.
+
 ## 2026-07-20 — T5c: store provider adapter codegen
 
 - `AetherStoreProvidersProcessor` + `ProviderAdapter.java.ftl`: emits `Fs*Store` / `Memory*Store` implementing generated `*Store` ports.

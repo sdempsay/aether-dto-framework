@@ -80,6 +80,7 @@ public class AetherStoreProvidersProcessor extends AbstractProcessor {
         final List<TypeElement> filesystem = typesFromMember(annotated, "filesystem");
         final List<TypeElement> singletonFilesystem = typesFromMember(annotated, "singletonFilesystem");
         final List<TypeElement> memory = typesFromMember(annotated, "memory");
+        final boolean scr = booleanFromMember(annotated, "scr", false);
 
         if (filesystem.isEmpty() && singletonFilesystem.isEmpty() && memory.isEmpty()) {
             error(annotated, "@AetherStoreProviders requires at least one non-empty list "
@@ -88,13 +89,13 @@ public class AetherStoreProvidersProcessor extends AbstractProcessor {
         }
 
         for (final TypeElement type : filesystem) {
-            generateIfValid(annotated, packageName, type, ProviderKind.FILESYSTEM);
+            generateIfValid(annotated, packageName, type, ProviderKind.FILESYSTEM, scr);
         }
         for (final TypeElement type : singletonFilesystem) {
-            generateIfValid(annotated, packageName, type, ProviderKind.SINGLETON_FILESYSTEM);
+            generateIfValid(annotated, packageName, type, ProviderKind.SINGLETON_FILESYSTEM, scr);
         }
         for (final TypeElement type : memory) {
-            generateIfValid(annotated, packageName, type, ProviderKind.MEMORY);
+            generateIfValid(annotated, packageName, type, ProviderKind.MEMORY, scr);
         }
     }
 
@@ -102,7 +103,8 @@ public class AetherStoreProvidersProcessor extends AbstractProcessor {
             final Element annotated,
             final String packageName,
             final TypeElement recordType,
-            final ProviderKind kind) {
+            final ProviderKind kind,
+            final boolean scr) {
         if (!validateRecord(annotated, recordType, kind)) {
             return;
         }
@@ -116,13 +118,16 @@ public class AetherStoreProvidersProcessor extends AbstractProcessor {
                 : recordPackage + "." + storeSimpleName;
         final String adapterSimpleName = kind.adapterSimpleName(recordSimpleName);
 
-        final ExceptionalResponse<String> rendered = ProviderCodegen.render(
+        final ProviderAdapterModel model = new ProviderAdapterModel(
                 packageName,
                 recordSimpleName,
                 recordQualifiedName,
                 storeSimpleName,
                 storeQualifiedName,
                 kind,
+                scr);
+        final ExceptionalResponse<String> rendered = ProviderCodegen.render(
+                model,
                 e -> error(annotated, "Failed to generate " + adapterSimpleName + ": " + e.getMessage()));
 
         if (rendered.wasError()) {
@@ -221,6 +226,29 @@ public class AetherStoreProvidersProcessor extends AbstractProcessor {
             }
         }
         return null;
+    }
+
+    private boolean booleanFromMember(
+            final Element annotated,
+            final String memberName,
+            final boolean defaultValue) {
+        final AnnotationMirror mirror = findProvidersMirror(annotated);
+        if (mirror == null) {
+            return defaultValue;
+        }
+        final Map<? extends ExecutableElement, ? extends AnnotationValue> values =
+                elements.getElementValuesWithDefaults(mirror);
+        for (final Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry
+                : values.entrySet()) {
+            if (!entry.getKey().getSimpleName().contentEquals(memberName)) {
+                continue;
+            }
+            final Object raw = entry.getValue().getValue();
+            if (raw instanceof Boolean bool) {
+                return bool;
+            }
+        }
+        return defaultValue;
     }
 
     private ExceptionalResponse<Writer> openWriter(

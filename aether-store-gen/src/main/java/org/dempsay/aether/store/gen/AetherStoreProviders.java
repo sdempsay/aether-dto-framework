@@ -52,8 +52,9 @@ import java.lang.annotation.Target;
  *       empty annotation is rejected by the processor.</li>
  * </ul>
  *
- * <p>Optional SCR {@code @Component} generation is a separate flag/follow-on (T5d),
- * not part of this annotation surface yet.
+ * <p>When {@link #scr()} is {@code true}, generated adapters include OSGi DS
+ * {@code @Component(service = XStore.class)} and {@code @Activate} (server module
+ * must depend on OSGi component annotations; keep api free of OSGi).
  *
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 1.0.0
@@ -88,4 +89,16 @@ public @interface AetherStoreProviders {
      * @return record classes (default empty)
      */
     Class<?>[] memory() default {};
+
+    /**
+     * When {@code true}, emit OSGi Declarative Services annotations on each
+     * generated adapter ({@code @Component}, {@code @Activate}). Default
+     * {@code false} for non-OSGi / pure unit-test servers.
+     *
+     * <p>Filesystem adapters activated via SCR expect component property
+     * {@code root} (string path). Memory adapters use a no-arg activate ctor.
+     *
+     * @return whether to generate SCR annotations
+     */
+    boolean scr() default false;
 }

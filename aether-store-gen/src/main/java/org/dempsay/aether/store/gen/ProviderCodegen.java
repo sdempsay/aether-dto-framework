@@ -27,39 +27,31 @@ final class ProviderCodegen {
     /**
      * Renders one provider adapter class.
      *
-     * @param packageName package of the generated adapter (server package)
-     * @param recordSimpleName simple name of the DTO record
-     * @param recordQualifiedName fully qualified record name
-     * @param storeSimpleName simple name of the generated store interface
-     * @param storeQualifiedName fully qualified store interface name
-     * @param kind provider kind
+     * @param model adapter template inputs
      * @param onError failure listener
      * @return generated Java source
      */
     static ExceptionalResponse<String> render(
-            final String packageName,
-            final String recordSimpleName,
-            final String recordQualifiedName,
-            final String storeSimpleName,
-            final String storeQualifiedName,
-            final ProviderKind kind,
+            final ProviderAdapterModel model,
             final ExceptionalListener onError) {
         return ExceptionalSupplier.of(() -> {
             final Template template = CONFIGURATION.getTemplate("ProviderAdapter.java.ftl");
-            final Map<String, Object> model = new HashMap<>();
-            model.put("packageName", packageName);
-            model.put("recordSimpleName", recordSimpleName);
-            model.put("recordQualifiedName", recordQualifiedName);
-            model.put("storeSimpleName", storeSimpleName);
-            model.put("storeQualifiedName", storeQualifiedName);
-            model.put("adapterSimpleName", kind.adapterSimpleName(recordSimpleName));
-            model.put("superClassSimpleName", kind.superClassSimpleName());
-            model.put("superClassQualified", kind.superClassQualifiedName());
-            model.put("needsPath", kind.needsPathConstructor());
-            model.put("kindLabel", kind.kindLabel());
+            final ProviderKind kind = model.kind();
+            final Map<String, Object> freemarkerModel = new HashMap<>();
+            freemarkerModel.put("packageName", model.packageName());
+            freemarkerModel.put("recordSimpleName", model.recordSimpleName());
+            freemarkerModel.put("recordQualifiedName", model.recordQualifiedName());
+            freemarkerModel.put("storeSimpleName", model.storeSimpleName());
+            freemarkerModel.put("storeQualifiedName", model.storeQualifiedName());
+            freemarkerModel.put("adapterSimpleName", kind.adapterSimpleName(model.recordSimpleName()));
+            freemarkerModel.put("superClassSimpleName", kind.superClassSimpleName());
+            freemarkerModel.put("superClassQualified", kind.superClassQualifiedName());
+            freemarkerModel.put("needsPath", kind.needsPathConstructor());
+            freemarkerModel.put("kindLabel", kind.kindLabel());
+            freemarkerModel.put("scr", model.scr());
 
             final StringWriter output = new StringWriter();
-            template.process(model, output);
+            template.process(freemarkerModel, output);
             return output.toString();
         }).with(onError).execute();
     }

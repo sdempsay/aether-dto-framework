@@ -44,6 +44,13 @@
       <artifactId>aether-store-fs</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- For scr=true generated sources in processor tests -->
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.service.component.annotations</artifactId>
+      <version>1.5.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

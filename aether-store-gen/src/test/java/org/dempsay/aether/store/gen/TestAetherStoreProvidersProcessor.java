@@ -74,6 +74,35 @@ class TestAetherStoreProvidersProcessor {
         assertTrue(configSource.contains("extends FileSystemAetherSingletonStore<ConfigDto>"));
         assertTrue(configSource.contains("implements ConfigDtoStore"));
         assertTrue(configSource.contains("super(root, ConfigDto.class)"));
+        assertTrue(
+                !fsSource.contains("@Component"),
+                "scr defaults to false — no DS annotations");
+    }
+
+    @Test
+    void generatesScrAnnotationsWhenEnabled() throws Exception {
+        compileFixtures(
+                "MyDto.java",
+                "MyDtoStore.java",
+                "ConfigDto.java",
+                "ConfigDtoStore.java",
+                "server-scr/package-info.java");
+
+        final String fsSource = readFile(
+                outputDir.resolve("fixtures/server/scr/FsMyDtoStore.java").toFile()).response();
+        assertTrue(fsSource.contains("import org.osgi.service.component.annotations.Activate;"));
+        assertTrue(fsSource.contains("import org.osgi.service.component.annotations.Component;"));
+        assertTrue(fsSource.contains("@Component(service = MyDtoStore.class)"));
+        assertTrue(fsSource.contains("@Activate"));
+        assertTrue(fsSource.contains("Map<String, ?> properties"));
+        assertTrue(fsSource.contains("properties.get(\"root\")"));
+        assertTrue(fsSource.contains("public FsMyDtoStore(final Path root)"));
+
+        final String memSource = readFile(
+                outputDir.resolve("fixtures/server/scr/MemoryMyDtoStore.java").toFile()).response();
+        assertTrue(memSource.contains("@Component(service = MyDtoStore.class)"));
+        assertTrue(memSource.contains("@Activate"));
+        assertTrue(memSource.contains("public MemoryMyDtoStore()"));
     }
 
     @Test
@@ -151,6 +180,8 @@ class TestAetherStoreProvidersProcessor {
         entries.add(resolveDependency("org.dempsay.support.jsr269", "jsr269-utilities", "1.0.1"));
         entries.add(resolveDependency("org.freemarker", "freemarker", "2.3.34"));
         entries.add(resolveDependency("com.google.code.gson", "gson", "2.11.0"));
+        entries.add(resolveDependency(
+                "org.osgi", "org.osgi.service.component.annotations", "1.5.1"));
         return String.join(File.pathSeparator, entries);
     }
 
