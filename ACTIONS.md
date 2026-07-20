@@ -1,5 +1,11 @@
 # Actions log
 
+## 2026-07-20 — Split store read-all from wishlist query (T9)
+
+- Opened [#11](https://github.com/sdempsay/aether-dto-framework/issues/11): unfiltered `list` / `readAll` on `AetherResourceStore`.
+- TODO **T9** pending; T8 / [#7](https://github.com/sdempsay/aether-dto-framework/issues/7) clarified as post-list GraphQL/filter wishlist only.
+- PRD-updated non-goals / wishlist updated to match.
+
 ## 2026-07-20 — AGENT-USAGE.md for consumers
 
 - Added `AGENT-USAGE.md`: how agents consume Aether (coords, processor path, DTOs/builders/stores, exceptional, in-memory vs FS).

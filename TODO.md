@@ -24,4 +24,5 @@ Task tracker for Aether (`PRD.md`).
 | T5d | Optional SCR `@Component` on generated provider classes | pending | [#10](https://github.com/sdempsay/aether-dto-framework/issues/10) (depends on #8) |
 | T6 | Persistence layer: CRUD stores, metadata envelope, FS JSON (design in PRD-updated) | in_progress | [#5](https://github.com/sdempsay/aether-dto-framework/issues/5) — remaining: AAA decorator, polish; SCR store interfaces done (T5a) |
 | T7 | Type-level validation annotations (deferred from MVP design) | pending | [#6](https://github.com/sdempsay/aether-dto-framework/issues/6) |
-| T8 | Wishlist: GraphQL / generic frontend query after filtering exists | wishlist | [#7](https://github.com/sdempsay/aether-dto-framework/issues/7) |
+| T8 | Wishlist: GraphQL / generic frontend query after list/filter exists | wishlist | [#7](https://github.com/sdempsay/aether-dto-framework/issues/7) — after T9 / filtering; not basic list |
+| T9 | Store read-all / list (unfiltered enumeration on `AetherResourceStore`) | pending | [#11](https://github.com/sdempsay/aether-dto-framework/issues/11) |

@@ -70,7 +70,7 @@ Design status: **agreed direction** (not yet implemented). Tracks [issue #5](htt
 
 - Full HTTP server / REST framework
 - JPA/Hibernate entity lifecycle, sessions, dirty checking
-- Collection **list/query** on the core store (deferred; leave room for a later query port—possibly frontend-friendly generic querying)
+- Collection **list/query** on the core store was deferred in v1 design; **unfiltered read-all** is now tracked as TODO **T9** / [issue #11](https://github.com/sdempsay/aether-dto-framework/issues/11). Filtered query / GraphQL remains wishlist **T8** / [#7](https://github.com/sdempsay/aether-dto-framework/issues/7).
 - Field-level merge / PATCH (update is full document replace)
 - Auto-generated Gson `JsonAdapter` (still out of scope per original PRD)
 
@@ -480,7 +480,7 @@ Providers implement the same interfaces; they never depend on each other. OSGi l
 | Delete missing | Idempotent success |
 | Version on update | **Required** expected version |
 | Version format | New **random UUID** each successful write |
-| List/query | Not on core interface in v1 |
+| List/query | Not on core interface in v1; **read-all** → T9 / [#11](https://github.com/sdempsay/aether-dto-framework/issues/11); filtered query → T8 / [#7](https://github.com/sdempsay/aether-dto-framework/issues/7) |
 | Uniqueness | `@Unique` on fields; default group = field name; same group = composite |
 | Singleton | `@Singleton` + `AetherSingletonStore` (no caller id) |
 | First backend | Filesystem, one JSON file per id under `{root}/{type}/` |
@@ -545,4 +545,5 @@ Trigger lives on **server** package-info / module type (`filesystem = { MyDto.cl
 
 ### Wishlist (after filtering)
 
-- Explore GraphQL and/or other **generic frontend query** approaches **once a filter/list query port exists** — reminder only: [issue #7](https://github.com/sdempsay/aether-dto-framework/issues/7) / TODO **T8**.
+- **Read-all / list** (unfiltered): [issue #11](https://github.com/sdempsay/aether-dto-framework/issues/11) / TODO **T9**.
+- Explore GraphQL and/or other **generic frontend query** approaches **once list (#11) and a filter port exist** — reminder only: [issue #7](https://github.com/sdempsay/aether-dto-framework/issues/7) / TODO **T8**.
