@@ -5,6 +5,7 @@ import java.util.List;
 <#if needsPattern>
 import java.util.regex.Pattern;
 </#if>
+
 import org.dempsay.aether.builder.AetherBuilder;
 import org.dempsay.aether.validation.ValidationException;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
@@ -15,6 +16,9 @@ import ${v.qualifiedName};
 </#if>
 </#list>
 
+/**
+ * Generated builder for {@link ${recordName}}.
+ */
 public final class ${builderName} implements AetherBuilder<${recordName}><#if viewInterfaces?has_content>, <#list viewInterfaces as v>${v.simpleName}<#sep>, </#list></#if> {
 <#list components as c>
 <#if c.hasRegex()>
@@ -25,9 +29,17 @@ public final class ${builderName} implements AetherBuilder<${recordName}><#if vi
     private ${c.typeName} ${c.name};
 
 </#list>
-    public ${builderName}() {}
+    /**
+     * Creates an empty builder.
+     */
+    public ${builderName}() { }
 
-    public ${builderName}(${recordName} source) {
+    /**
+     * Creates a builder initialized from an existing record (or empty if null).
+     *
+     * @param source existing record, or {@code null}
+     */
+    public ${builderName}(final ${recordName} source) {
         if (source != null) {
 <#list components as c>
             this.${c.name} = source.${c.name}();
@@ -36,18 +48,25 @@ public final class ${builderName} implements AetherBuilder<${recordName}><#if vi
     }
 
 <#list components as c>
+    /**
+     * @return current {@code ${c.name}} value
+     */
     public ${c.typeName} ${c.name}() {
         return ${c.name};
     }
 
-    public ${builderName} ${c.name}(${c.typeName} ${c.name}) {
+    /**
+     * @param ${c.name} value to set
+     * @return this builder
+     */
+    public ${builderName} ${c.name}(final ${c.typeName} ${c.name}) {
         this.${c.name} = ${c.name};
         return this;
     }
 
 </#list>
     private List<String> collectValidationErrors() {
-        var errors = new ArrayList<String>();
+        final List<String> errors = new ArrayList<>();
 
 <#list components as c>
     <#if !c.nullable>

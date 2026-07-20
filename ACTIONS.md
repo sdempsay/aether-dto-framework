@@ -1,5 +1,10 @@
 # Actions log
 
+## 2026-07-20 — Generated builders pass dempsay checkstyle
+
+- FreeMarker `Builder.java.ftl` / `validation.java.ftl`: `final` method params, empty ctor `{ }`, blank line between java/third-party imports, `final` length locals, minimal class/method Javadoc.
+- Unblocks aether-test consumers that scan `target/generated-sources` (no exclude needed).
+
 ## 2026-07-20 — T9: AetherResourceStore.list (unfiltered read-all)
 
 - Added `list(onError, principal) → ExceptionalResponse<List<AetherPersisted<T>>>` on `AetherResourceStore`.

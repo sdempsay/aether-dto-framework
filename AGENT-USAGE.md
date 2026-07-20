@@ -385,6 +385,7 @@ unzip -p aether-store-fs/target/aether-store-fs-*.jar META-INF/MANIFEST.MF
 | Mistake | Fix |
 |---------|-----|
 | Forgetting annotation processor path | Add `aether-builder-gen` (+ api/exceptional/freemarker/jsr269) to **annotationProcessorPaths** |
+| Excluding generated sources from checkstyle | Prefer current aether templates (emit dempsay-checkstyle-safe Java); do not need a permanent exclude |
 | Nested records / `List` fields in MVP | Flat components only until backlog T2/T3 |
 | Throwing for validation / store failures | Prefer `ExceptionalResponse` / exceptional utilities |
 | Using `aether-store-fs` as the only test backend | Prefer **in-memory** for unit tests |
