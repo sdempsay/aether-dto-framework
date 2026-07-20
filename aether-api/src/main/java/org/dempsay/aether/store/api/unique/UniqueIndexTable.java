@@ -1,4 +1,4 @@
-package org.dempsay.aether.store.unique;
+package org.dempsay.aether.store.api.unique;
 
 import java.util.ArrayList;
 import java.util.List;

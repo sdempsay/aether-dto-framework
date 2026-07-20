@@ -1,4 +1,4 @@
-package org.dempsay.aether.store;
+package org.dempsay.aether.store.api;
 
 /**
  * Options for resource update (PUT) operations.

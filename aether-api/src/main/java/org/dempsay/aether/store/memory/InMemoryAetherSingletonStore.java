@@ -10,12 +10,12 @@ import java.util.function.Supplier;
 import org.dempsay.aether.access.AetherPrincipal;
 import org.dempsay.aether.failure.AetherFailure;
 import org.dempsay.aether.failure.AetherResponses;
-import org.dempsay.aether.store.AetherAck;
-import org.dempsay.aether.store.AetherPersisted;
-import org.dempsay.aether.store.AetherSingletonStore;
-import org.dempsay.aether.store.DefaultAetherPersisted;
-import org.dempsay.aether.store.DefaultAetherResourceMetadata;
-import org.dempsay.aether.store.UpdateOptions;
+import org.dempsay.aether.store.api.AetherAck;
+import org.dempsay.aether.store.api.AetherPersisted;
+import org.dempsay.aether.store.api.AetherSingletonStore;
+import org.dempsay.aether.store.api.DefaultAetherPersisted;
+import org.dempsay.aether.store.api.DefaultAetherResourceMetadata;
+import org.dempsay.aether.store.api.UpdateOptions;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 

@@ -68,7 +68,7 @@ public class TestAetherBuilderProcessor {
         assertTrue(storeFile.exists(), "Store interface should be generated");
 
         final String source = readFile(storeFile).response();
-        assertTrue(source.contains("import org.dempsay.aether.store.AetherResourceStore;"));
+        assertTrue(source.contains("import org.dempsay.aether.store.api.AetherResourceStore;"));
         assertTrue(source.contains("public interface MyDtoStore extends AetherResourceStore<MyDto>"));
         assertFalse(source.contains("AetherSingletonStore"));
     }
@@ -81,7 +81,7 @@ public class TestAetherBuilderProcessor {
         assertTrue(storeFile.exists(), "Singleton store interface should be generated");
 
         final String source = readFile(storeFile).response();
-        assertTrue(source.contains("import org.dempsay.aether.store.AetherSingletonStore;"));
+        assertTrue(source.contains("import org.dempsay.aether.store.api.AetherSingletonStore;"));
         assertTrue(source.contains("public interface ConfigDtoStore extends AetherSingletonStore<ConfigDto>"));
         assertFalse(source.contains("AetherResourceStore"));
         assertTrue(outputDir.resolve("fixtures/ConfigDtoBuilder.java").toFile().exists());

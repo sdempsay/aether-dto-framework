@@ -1,5 +1,10 @@
 # Actions log
 
+## 2026-07-20 — Store API package space (`store.api`)
+
+- Moved store ports/envelope/defaults/unique/config from `org.dempsay.aether.store` → `org.dempsay.aether.store.api` (config → `store.api.config`, unique → `store.api.unique`).
+- Left providers as `store.memory` / `store.fs` / `store.gen`. Updated exports, templates, aether-test imports.
+
 ## 2026-07-20 — FileStoreConfig + SCR @Reference for FS adapters
 
 - API: `FileStoreConfig` (`location()`, default `aetherFileStore`).

@@ -1,6 +1,6 @@
 package org.dempsay.aether.store.fs;
 
-import org.dempsay.aether.store.config.FileStoreConfig;
+import org.dempsay.aether.store.api.config.FileStoreConfig;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;

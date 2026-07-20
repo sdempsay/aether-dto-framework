@@ -18,23 +18,23 @@ import com.google.gson.JsonElement;
 import org.dempsay.aether.access.AetherPrincipal;
 import org.dempsay.aether.failure.AetherFailure;
 import org.dempsay.aether.failure.AetherResponses;
-import org.dempsay.aether.store.AbstractAetherResourceStore;
-import org.dempsay.aether.store.AetherAck;
-import org.dempsay.aether.store.AetherPersisted;
-import org.dempsay.aether.store.DefaultAetherPersisted;
-import org.dempsay.aether.store.DefaultAetherResourceMetadata;
-import org.dempsay.aether.store.UpdateOptions;
+import org.dempsay.aether.store.api.AbstractAetherResourceStore;
+import org.dempsay.aether.store.api.AetherAck;
+import org.dempsay.aether.store.api.AetherPersisted;
+import org.dempsay.aether.store.api.DefaultAetherPersisted;
+import org.dempsay.aether.store.api.DefaultAetherResourceMetadata;
+import org.dempsay.aether.store.api.UpdateOptions;
 import org.dempsay.aether.store.fs.StoredDocument.StoredMetadata;
-import org.dempsay.aether.store.unique.UniqueConstraintModel;
-import org.dempsay.aether.store.unique.UniqueIndexTable;
-import org.dempsay.aether.store.unique.UniqueKey;
+import org.dempsay.aether.store.api.unique.UniqueConstraintModel;
+import org.dempsay.aether.store.api.unique.UniqueIndexTable;
+import org.dempsay.aether.store.api.unique.UniqueKey;
 import org.dempsay.aether.failure.AetherException;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResource;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
 
 /**
- * Filesystem JSON {@link org.dempsay.aether.store.AetherResourceStore} using Gson.
+ * Filesystem JSON {@link org.dempsay.aether.store.api.AetherResourceStore} using Gson.
  *
  * <p>Layout: {@code {root}/{resourceType}/{id}.json}. Fully synchronized on a
  * single lock for thread safety. All I/O uses exceptional patterns (no

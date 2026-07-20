@@ -1,4 +1,4 @@
-package org.dempsay.aether.store;
+package org.dempsay.aether.store.api;
 
 import org.dempsay.aether.access.AetherPrincipal;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;

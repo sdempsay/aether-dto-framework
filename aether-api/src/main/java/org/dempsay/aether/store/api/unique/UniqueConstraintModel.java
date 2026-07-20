@@ -1,4 +1,4 @@
-package org.dempsay.aether.store.unique;
+package org.dempsay.aether.store.api.unique;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;

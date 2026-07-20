@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 /**
  * Marks an {@link AetherRecord} type as a singleton resource (cardinality ≤ 1).
  *
- * <p>Use with {@link org.dempsay.aether.store.AetherSingletonStore}; there is no
+ * <p>Use with {@link org.dempsay.aether.store.api.AetherSingletonStore}; there is no
  * caller-facing id on the public API. Runtime retention allows tooling and
  * providers to detect the marker without codegen.
  *

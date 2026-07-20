@@ -1,4 +1,4 @@
-package org.dempsay.aether.store;
+package org.dempsay.aether.store.api;
 
 /**
  * Envelope around a domain resource and its store-owned metadata.

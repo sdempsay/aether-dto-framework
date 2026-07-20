@@ -269,7 +269,7 @@ Aether jars are built with **`dempsay-felix-parent`** (bnd). Use this section wh
 
 | Artifact | Bundle-SymbolicName | Export-Package | Install in framework? |
 |----------|---------------------|----------------|------------------------|
-| `aether-api` | `org.dempsay.aether.aether-api` | `org.dempsay.aether.access`, `.annotations`, `.builder`, `.failure`, `.store`, `.store.*`, `.validation` | **Yes** |
+| `aether-api` | `org.dempsay.aether.aether-api` | `…access`, `…annotations`, `…builder`, `…failure`, `…store.api` (+ subpackages), `…store.memory`, `…validation` | **Yes** |
 | `aether-store-fs` | `org.dempsay.aether.aether-store-fs` | `org.dempsay.aether.store.fs` | **Yes**, if using FS |
 | `exceptional` | (exceptional’s BSN) | exceptional API packages | **Yes** (api imports it) |
 | Gson | third-party OSGi jar | `com.google.gson` | **Yes**, if using `aether-store-fs` |

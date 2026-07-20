@@ -1,4 +1,4 @@
-package org.dempsay.aether.store;
+package org.dempsay.aether.store.api;
 
 /**
  * Non-null success token for store operations with no payload (e.g. delete).

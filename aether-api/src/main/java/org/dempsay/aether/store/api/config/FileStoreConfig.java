@@ -1,4 +1,4 @@
-package org.dempsay.aether.store.config;
+package org.dempsay.aether.store.api.config;
 
 /**
  * Configuration for filesystem-backed Aether stores.
