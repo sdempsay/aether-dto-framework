@@ -72,10 +72,12 @@ When reviewing or fixing exceptional compliance, scope checks to `src/main` and 
 
 | Module | Role |
 |--------|------|
-| `aether-api` | Annotations, builders, store ports, in-memory fakes, `ValidationException` |
-| `aether-builder-gen` | JSR-269 processor: builders + `*Store` interfaces (SCR) |
-| `aether-runtime` | Consumer-facing dependency aggregator |
-| `aether-store-fs` | Filesystem JSON provider (Gson); fully synchronized prototype |
+| `aether-api` | Annotations, builders, store ports, in-memory fakes, `ValidationException` (OSGi exports) |
+| `aether-builder-gen` | JSR-269 processor: builders + `*Store` interfaces (compile-time only; not for Felix install) |
+| `aether-runtime` | Consumer-facing Maven dependency aggregator (no OSGi exports) |
+| `aether-store-fs` | Filesystem JSON provider (Gson); OSGi exports `org.dempsay.aether.store.fs` |
+
+Reactor parent: `dempsay-felix-parent`. Public packages via `felix.bundle.exportcontents`. See README OSGi section and `../dempsay-felix-parent/AGENT-USAGE.md`.
 
 ## Other conventions
 

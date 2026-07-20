@@ -13,6 +13,10 @@
 
   <description>Runtime dependency aggregator for Aether consumers</description>
 
+  <!--
+    Maven convenience only: empty jar, no Export-Package (default).
+    OSGi consumers should wire aether-api (+ exceptional) and optional aether-store-* directly.
+  -->
   <dependencies>
     <dependency>
       <groupId>org.dempsay.aether</groupId>

@@ -13,6 +13,10 @@
 
   <description>JSR-269 annotation processor that generates validated DTO builders</description>
 
+  <!--
+    Compile-time annotation processor only — not installed into OSGi runtimes.
+    Bundle metadata is still produced (no exports); use via annotationProcessorPaths.
+  -->
   <dependencies>
     <dependency>
       <groupId>org.dempsay.aether</groupId>

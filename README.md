@@ -6,11 +6,12 @@ Aether is a minimal, annotation-driven, compile-time-generated persistence DTO l
 
 ## Modules
 
-| Module | Purpose |
-|--------|---------|
-| `aether-api` | Annotations and `ValidationException` |
-| `aether-builder-gen` | JSR-269 annotation processor (compile-time only) |
-| `aether-runtime` | Runtime dependency aggregator for consumers |
+| Module | Purpose | OSGi |
+|--------|---------|------|
+| `aether-api` | Annotations, builders, store ports, in-memory fakes | Bundle; exports `org.dempsay.aether.*` API packages |
+| `aether-builder-gen` | JSR-269 annotation processor (compile-time only) | Bundle metadata only; **not** for OSGi runtime install |
+| `aether-runtime` | Maven dependency aggregator (`aether-api` + exceptional) | Empty jar / no exports — use `aether-api` in OSGi |
+| `aether-store-fs` | Filesystem JSON store provider (Gson) | Bundle; exports `org.dempsay.aether.store.fs` |
 
 ## Quick Start
 
@@ -88,13 +89,38 @@ String json = new Gson().toJson(user); // {"username":"alice","nickname":null}
 - `@AetherRecord` required for builder generation
 - Validation annotations apply to `String` components only
 
+## OSGi
+
+Parent: `org.dempsay.maven:dempsay-felix-parent` (bnd + provided OSGi APIs). See that repo’s `AGENT-USAGE.md`.
+
+| Bundle | Symbolic name | Exports |
+|--------|---------------|---------|
+| `aether-api` | `org.dempsay.aether.aether-api` | access, annotations, builder, failure, store (+ memory/unique), validation |
+| `aether-store-fs` | `org.dempsay.aether.aether-store-fs` | `org.dempsay.aether.store.fs` |
+| `aether-runtime` | `org.dempsay.aether.aether-runtime` | none (Maven-only aggregator) |
+| `aether-builder-gen` | `org.dempsay.aether.aether-builder-gen` | none (compile-time processor) |
+
+**OSGi consumer checklist**
+
+1. Install **`aether-api`** and **`exceptional`** (Import-Package from api).
+2. Optional FS provider: install **`aether-store-fs`** and a **Gson** OSGi bundle (Import-Package `com.google.gson`).
+3. Do **not** install `aether-builder-gen` into the framework — use it only on the Maven compiler `annotationProcessorPaths`.
+4. Prefer **`aether-api`** over `aether-runtime` as the OSGi dependency; runtime is for non-OSGi Maven convenience.
+5. Generated `*Store` interfaces (T5a) are for app SCR wiring; framework provider SCR adapters are T5b–T5d.
+
+Verify headers after package:
+
+```bash
+unzip -p aether-api/target/aether-api-*.jar META-INF/MANIFEST.MF
+```
+
 ## Build
 
 ```bash
 mvn -f pom.xml verify
 ```
 
-Requires `dempsay-parent:1.0.4`, `jsr269-utilities:1.0.1`, and `exceptional:1.0.9` in your Maven repository.
+Requires `dempsay-felix-parent:1.1.0-SNAPSHOT` (→ `dempsay-parent:1.0.4`), `jsr269-utilities:1.0.1`, and `exceptional:1.0.9` in your Maven repository.
 
 Tests are enabled by `aether-builder-gen/src/test/resources/tests.md`, which activates JUnit Jupiter via `dempsay-parent`.
 

@@ -320,8 +320,12 @@ ExceptionalSupplier.of(() -> BuilderCodegen.render(packageName, recordName, comp
 - ✅ Modular Maven layout → each module can become a bundle later.
 - ✅ No static state or singletons (avoids classloader issues).
 
-### Action Required Later
-- Add `Export-Package`, `Import-Package` headers when converting to bundles.
+### Bundle packaging (T5)
+- Parent: `org.dempsay.maven:dempsay-felix-parent` (bnd lifecycle, provided OSGi APIs).
+- `aether-api` / `aether-store-fs` set `felix.bundle.exportcontents` for public packages.
+- `Import-Package` is calculated by bnd (do not force `*` / optional unless required).
+- `aether-runtime` is a Maven aggregator only (no exports). `aether-builder-gen` is compile-time only.
+- Remaining: optional SCR on generated providers (T5b–T5d); see `PRD-updated.md`.
 
 ---
 
@@ -333,7 +337,7 @@ Resolved during planning (2026-07):
 |----------|--------|-----------|
 | Builder trigger | `@AetherRecord` marker | Explicit opt-in; avoids generating builders for every record |
 | Annotation placement | `RECORD_COMPONENT` | Matches JSR 269 record model; type-level constraints deferred |
-| Maven parent | `dempsay-parent:1.0.4` | Aligns with org standard |
+| Maven parent | `dempsay-felix-parent:1.1.0-SNAPSHOT` (→ `dempsay-parent:1.0.4`) | OSGi bundle metadata via bnd; inherits dempsay standards |
 | Codegen | FreeMarker templates via `Filer` | Readable, maintainable templates; compile-time-only dep |
 | Builder accessors | `field()` + `field(T)` per component | Matches record contract; enables builder `implements` on record interfaces |
 | Dependency versions | Root `dependencyManagement` only | One version per artifact across all submodules |

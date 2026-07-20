@@ -8,6 +8,18 @@
 - **Version:** `1.1.0-SNAPSHOT` (post-rename baseline).
 - Rationale: match dempsay reverse-DNS (`org.dempsay.utils`, `org.dempsay.support.jsr269`, consumer `org.dempsay.aether.test`); avoid collision/confusion with historical Maven/Eclipse Aether.
 
+## OSGi packaging (dempsay-felix-parent)
+
+- Reactor parent is **`org.dempsay.maven:dempsay-felix-parent:1.1.0-SNAPSHOT`** (not bare dempsay-parent).
+- Bundle jars use packaging **`jar`**; bnd-process supplies OSGi manifests (`Bundle-SymbolicName` = `${groupId}.${artifactId}`).
+- Public exports via property **`felix.bundle.exportcontents`**:
+  - `aether-api`: access, annotations, builder, failure, store (+ `store.*`), validation
+  - `aether-store-fs`: `org.dempsay.aether.store.fs`
+  - `aether-runtime` / `aether-builder-gen`: default empty (no public Export-Package)
+- Import-Package: bnd defaults (bytecode analysis). FS provider imports Gson and `aether-api` packages; runtime must supply those bundles.
+- Do not install `aether-builder-gen` into Felix; keep it on annotation processor path only.
+- Consumer docs: README “OSGi” section. Parent usage: `dempsay-felix-parent/AGENT-USAGE.md`.
+
 ## High-level goal: testable without infrastructure
 
 Applications written against Aether’s **API layer** (DTO annotations/builders, store ports, access-control SPI) must be **unit-testable without a running database or document store**.

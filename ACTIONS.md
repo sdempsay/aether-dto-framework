@@ -1,5 +1,12 @@
 # Actions log
 
+## 2026-07-20 — T5: OSGi bundle packaging (dempsay-felix-parent)
+
+- Reactor parent: `dempsay-parent` → `dempsay-felix-parent:1.1.0-SNAPSHOT` (bnd + provided OSGi APIs).
+- `aether-api` / `aether-store-fs`: `felix.bundle.exportcontents` for public packages; verified Export-Package / BSN / Import-Package in MANIFEST.MF.
+- `aether-runtime`: Maven aggregator only (no exports). `aether-builder-gen`: compile-time only (no exports).
+- Documented OSGi consumer checklist in README; PRD §5 + PRD-updated. `code-review` skipped (tool unusable). Closes #4 packaging scope; T5b–T5d still open.
+
 ## 2026-07-20 — Correct Maven coordinates and Java packages
 
 - Renamed `groupId` `org.aether` → `org.dempsay.aether` (aligned with dempsay namespace and `aether-test`).

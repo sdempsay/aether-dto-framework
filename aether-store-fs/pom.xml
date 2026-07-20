@@ -13,6 +13,10 @@
 
   <description>Filesystem JSON persistence provider for Aether (Gson)</description>
 
+  <properties>
+    <felix.bundle.exportcontents>org.dempsay.aether.store.fs</felix.bundle.exportcontents>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.dempsay.aether</groupId>

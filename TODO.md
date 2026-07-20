@@ -17,7 +17,7 @@ Task tracker for Aether (`PRD.md`).
 | T2 | Nested `@AetherRecord` components in generated builders | pending | [#1](https://github.com/sdempsay/aether-dto-framework/issues/1) |
 | T3 | Collection components (`List` and related) on `@AetherRecord` DTOs | pending | [#2](https://github.com/sdempsay/aether-dto-framework/issues/2) |
 | T4 | Extensible / custom validation annotations beyond MVP set | pending | [#3](https://github.com/sdempsay/aether-dto-framework/issues/3) |
-| T5 | OSGi bundle packaging for aether modules | pending | [#4](https://github.com/sdempsay/aether-dto-framework/issues/4) — needs generated `*Store` interfaces for SCR (see PRD-updated) |
+| T5 | OSGi bundle packaging for aether modules | complete | [#4](https://github.com/sdempsay/aether-dto-framework/issues/4) — dempsay-felix-parent + exportcontents; SCR providers remain T5b–T5d |
 | T5a | Codegen: `*Store` interfaces extending `AetherResourceStore` / `AetherSingletonStore` | complete | `Store.java.ftl`; `@Singleton` → `AetherSingletonStore`, else `AetherResourceStore` |
 | T5b | Define `@AetherStoreProviders` annotation API (Option A) | pending | [#9](https://github.com/sdempsay/aether-dto-framework/issues/9) |
 | T5c | Server store codegen: `@AetherStoreProviders` → Fs/Memory `*Store` adapters | pending | [#8](https://github.com/sdempsay/aether-dto-framework/issues/8) (depends on #9) |
