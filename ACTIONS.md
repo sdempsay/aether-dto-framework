@@ -1,5 +1,10 @@
 # Actions log
 
+## 2026-07-20 — Refresh agent docs (packages + store-memory)
+
+- Updated `agents.md` and `AGENT-USAGE.md`: `org.dempsay.aether.api.*` package map, module/provider split, checklists/mistakes.
+- Updated sibling `aether-test/AGENTS.md` for `aether-store-memory` deps and correct imports.
+
 ## 2026-07-20 — aether-store-memory as its own bundle
 
 - Moved `InMemoryAetherResourceStore` / `InMemoryAetherSingletonStore` from `aether-api` into new module **`aether-store-memory`**.

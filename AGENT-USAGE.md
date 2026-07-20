@@ -36,15 +36,34 @@ Aether is a **compile-time–generated** DTO + persistence-port layer for **Java
 |-------|--------|
 | groupId | `org.dempsay.aether` |
 | version | Match installed (e.g. `1.1.0-SNAPSHOT`) |
-| Java packages | `org.dempsay.aether.*` |
+| Public packages | **`org.dempsay.aether.api.*`** only |
+| Provider packages | `org.dempsay.aether.store.memory`, `…store.fs`, `…store.gen` |
 
 | Artifact | Role | When to depend |
 |----------|------|----------------|
-| `aether-api` | Annotations, `AetherBuilder`, store ports, `ValidationException` (contracts only) | Always (runtime + compile of DTOs) |
-| `aether-store-memory` | In-memory store provider | Tests / light use / OSGi demo without FS |
-| `aether-builder-gen` | Annotation processor | **Processor path only** (never runtime classpath for app logic) |
-| `aether-runtime` | Maven aggregator: pulls `aether-api` + `exceptional` | Non-OSGi apps that want one dependency |
+| `aether-api` | Contracts only (`api.*`) | Always (DTO compile + app ports) |
+| `aether-store-memory` | In-memory provider | Tests / light use / OSGi without FS |
 | `aether-store-fs` | Filesystem JSON provider (Gson) | When you need FS persistence |
+| `aether-builder-gen` | Annotation processor (`*Builder`, `*Store` interfaces) | **Processor path only** |
+| `aether-store-gen` | Server `@AetherStoreProviders` + Fs/Memory adapter processor | Server/impl compile + processor path |
+| `aether-runtime` | Maven aggregator: `aether-api` + `exceptional` (no store providers) | Optional non-OSGi convenience |
+
+### Package map (quick)
+
+```
+org.dempsay.aether.api.annotations   # @AetherRecord, @Unique, …
+org.dempsay.aether.api.access        # AetherPrincipal
+org.dempsay.aether.api.builder       # AetherBuilder
+org.dempsay.aether.api.failure       # AetherFailure, …
+org.dempsay.aether.api.validation    # ValidationException
+org.dempsay.aether.api.store         # AetherResourceStore, AetherPersisted, …
+org.dempsay.aether.api.store.config  # FileStoreConfig
+org.dempsay.aether.api.store.unique  # UniqueConstraintModel (provider helpers)
+
+org.dempsay.aether.store.memory      # InMemory*  → aether-store-memory
+org.dempsay.aether.store.fs          # FileSystem* → aether-store-fs
+org.dempsay.aether.store.gen         # @AetherStoreProviders → aether-store-gen
+```
 
 **Prerequisite:** artifacts installed or available in the consumer’s Maven repo (`mvn -DskipDocker install` from this repo for SNAPSHOTs).
 
@@ -71,22 +90,24 @@ Aether is a **compile-time–generated** DTO + persistence-port layer for **Java
   </properties>
 
   <dependencies>
-    <!-- Option A: one Maven dep for api + exceptional -->
+    <!-- Contracts -->
     <dependency>
       <groupId>org.dempsay.aether</groupId>
-      <artifactId>aether-runtime</artifactId>
+      <artifactId>aether-api</artifactId>
       <version>${aether.version}</version>
     </dependency>
-    <!-- Option B: depend on aether-api + exceptional explicitly (required for OSGi) -->
-
-    <!-- Optional FS backend -->
-    <!--
+    <dependency>
+      <groupId>org.dempsay.utils</groupId>
+      <artifactId>exceptional</artifactId>
+      <version>${exceptional.version}</version>
+    </dependency>
+    <!-- In-memory provider (tests / smoke). Use aether-store-fs for filesystem. -->
     <dependency>
       <groupId>org.dempsay.aether</groupId>
-      <artifactId>aether-store-fs</artifactId>
+      <artifactId>aether-store-memory</artifactId>
       <version>${aether.version}</version>
     </dependency>
-    -->
+    <!-- Optional: aether-runtime instead of aether-api+exceptional (does not pull store providers) -->
   </dependencies>
 
   <build>
@@ -233,20 +254,21 @@ No filter, pagination, or query language on `list` (see wishlist T8 / issue #7).
 
 `AppConfigDtoStore extends AetherSingletonStore<AppConfigDto>` — no multi-id collection; single document API.
 
-### In-memory (tests / smoke)
+### In-memory (tests / smoke) — dependency `aether-store-memory`
 
 ```java
 import org.dempsay.aether.api.access.AetherPrincipal;
+import org.dempsay.aether.api.store.AetherPersisted;
 import org.dempsay.aether.store.memory.InMemoryAetherResourceStore;
 
 InMemoryAetherResourceStore<UserDto> store =
     new InMemoryAetherResourceStore<>(UserDto.class);
 
-AetherPrincipal principal = /* construct per API */;
-// store.create(principal, user) → ExceptionalResponse<AetherPersisted<UserDto>>
+AetherPrincipal principal = AetherPrincipal.user("alice");
+// store.create(onError, principal, user) → ExceptionalResponse<AetherPersisted<UserDto>>
 ```
 
-### Filesystem provider
+### Filesystem provider — dependency `aether-store-fs`
 
 ```java
 import org.dempsay.aether.store.fs.FileSystemAetherResourceStore;
@@ -256,9 +278,9 @@ FileSystemAetherResourceStore<UserDto> store =
     new FileSystemAetherResourceStore<>(rootPath, UserDto.class);
 ```
 
-Metadata (id, timestamps, version) lives on `AetherPersisted` / `AetherResourceMetadata`, not on the domain record.
+Metadata (id, timestamps, version) lives on `org.dempsay.aether.api.store.AetherPersisted` / `AetherResourceMetadata`, not on the domain record.
 
-**Unit tests:** inject `AetherResourceStore<T>` or the generated `*Store` with an in-memory implementation. Do **not** require Mongo/Postgres for unit tests.
+**Unit tests:** depend on **`aether-store-memory`** (not `aether-api` alone for store classes). Inject `AetherResourceStore<T>` or generated `*Store`. Do **not** require Mongo/Postgres for unit tests.
 
 ---
 
@@ -300,9 +322,9 @@ Java EE requirement: **JavaSE 21** (`Require-Capability: osgi.ee`).
    ```
 
    Prefer type-based DS references (`@Reference UserDtoStore`) over raw `AetherResourceStore<UserDto>` where SCR erasure is painful.
-6. **Provider adapters:** declare types with **`@AetherStoreProviders`** on a **server** `package-info` / marker type and register **`aether-store-gen`** on `annotationProcessorPaths` (plus `aether-store-fs` on the server compile classpath). Generates `Fs{Record}Store` / `Memory{Record}Store`. Set **`scr = true`** to emit OSGi DS `@Component` / `@Activate` with **`@Reference FileStoreConfig`** for FS roots (publish `FileStoreConfig`, e.g. `FileStoreConfigService` in `aether-store-fs`).
-7. **Do not unpack / shade `aether-api` into the consumer jar** once proper Export-Package is available. Older `aether-test` unpack hacks were workarounds for pre-bundle aether; prefer Import-Package resolution.
-8. FS stack at runtime: install **`aether-api`**, **`exceptional`**, **`aether-store-fs`**, and a **Gson** bundle that exports `com.google.gson` (and stream packages if required).
+6. **Provider adapters:** declare types with **`@AetherStoreProviders`** on a **server** `package-info` / marker type and register **`aether-store-gen`** on `annotationProcessorPaths` (plus `aether-store-fs` and/or `aether-store-memory` on the server compile classpath). Generates `Fs{Record}Store` / `Memory{Record}Store`. Set **`scr = true`** to emit OSGi DS `@Component` / `@Activate` with **`@Reference FileStoreConfig`** (`org.dempsay.aether.api.store.config`) for FS roots — publish `FileStoreConfig` (e.g. `FileStoreConfigService` in `aether-store-fs`).
+7. **Do not unpack / shade `aether-api` into the consumer jar.** Prefer Import-Package resolution.
+8. **Runtime stacks:** always `aether-api` + `exceptional`. Add **`aether-store-memory`** and/or **`aether-store-fs`** (+ Gson for FS).
 
 ### Minimal OSGi module sketch
 
@@ -350,6 +372,7 @@ Your app bundles (DTO/API + impl) are also direct compile deps so they land unde
 
 ```bash
 unzip -p aether-api/target/aether-api-*.jar META-INF/MANIFEST.MF
+unzip -p aether-store-memory/target/aether-store-memory-*.jar META-INF/MANIFEST.MF
 unzip -p aether-store-fs/target/aether-store-fs-*.jar META-INF/MANIFEST.MF
 # Expect Bundle-SymbolicName, Bundle-ManifestVersion: 2, Export-Package
 ```
@@ -418,14 +441,15 @@ Do **not** put this annotation on api DTO packages. Parent server modules from *
 ## Agent checklist (consuming Aether)
 
 1. Confirm version: `org.dempsay.aether:*` at the agreed SNAPSHOT/release (e.g. `1.1.0-SNAPSHOT`).
-2. Non-OSGi: `aether-runtime` **or** `aether-api` + exceptional; always configure **annotationProcessorPaths** for `aether-builder-gen`.
-3. OSGi: `aether-api` + exceptional as **bundles**; never install builder-gen or rely on aether-runtime exports.
-4. Annotate flat records with `@AetherRecord`; place validation on components.
-5. Use generated `*Builder` → `ExceptionalResponse`; use generated `*Store` for persistence ports.
-6. Unit tests: in-memory store (or temp FS); no required live database.
-7. Optional FS: `aether-store-fs` + Gson on the runtime classpath / framework.
-8. OSGi apps: parent `dempsay-felix-parent`, set `felix.bundle.exportcontents` for **your** public packages, register SCR on `*Store` types if using DS.
-9. Build consumer with `mvn -DskipDocker package` (or project norm) and confirm generated sources under `target/generated-sources/annotations` (or equivalent).
+2. Depend on **`aether-api`** (+ exceptional). For stores add **`aether-store-memory`** and/or **`aether-store-fs`**. `aether-runtime` does **not** pull providers.
+3. Configure **annotationProcessorPaths** for `aether-builder-gen` (+ api/exceptional/freemarker/jsr269 as needed).
+4. Use packages under **`org.dempsay.aether.api.*`** for contracts; never legacy `org.dempsay.aether.annotations` / bare `…store.AetherResourceStore`.
+5. Annotate flat records with `@AetherRecord`; place validation on components.
+6. Use generated `*Builder` → `ExceptionalResponse`; use generated `*Store` for persistence ports.
+7. Unit tests: **`aether-store-memory`** (or temp FS); no required live database.
+8. OSGi: install api + exceptional + provider bundles; never install builder-gen/store-gen as runtime app logic.
+9. Parent server modules from `dempsay-felix-parent`; export **your** packages; optional `aether-store-gen` + `scr = true` for generated Fs/Memory adapters.
+10. Build consumer with `mvn -DskipDocker package` and confirm generated sources under `target/generated-sources/annotations`.
 
 ---
 
@@ -433,13 +457,16 @@ Do **not** put this annotation on api DTO packages. Parent server modules from *
 
 | Mistake | Fix |
 |---------|-----|
+| Expecting `InMemory*` in `aether-api` | Depend on **`aether-store-memory`** |
+| Importing `org.dempsay.aether.annotations.*` | Use **`org.dempsay.aether.api.annotations.*`** |
+| Importing `org.dempsay.aether.store.AetherResourceStore` | Use **`org.dempsay.aether.api.store.AetherResourceStore`** |
 | Forgetting annotation processor path | Add `aether-builder-gen` (+ api/exceptional/freemarker/jsr269) to **annotationProcessorPaths** |
-| Excluding generated sources from checkstyle | Optional for consumers; **aether still must emit checkstyle-clean sources** — file a bug if generated code fails dempsay rules |
+| Excluding generated sources from checkstyle | Optional for consumers; **aether still must emit checkstyle-clean sources** |
 | Nested records / `List` fields in MVP | Flat components only until backlog T2/T3 |
 | Throwing for validation / store failures | Prefer `ExceptionalResponse` / exceptional utilities |
-| Using `aether-store-fs` as the only test backend | Prefer **in-memory** for unit tests |
+| Using `aether-store-fs` as the only test backend | Prefer **`aether-store-memory`** for unit tests |
 | Putting processor on runtime `dependencies` | Processor path only |
-| groupId `org.aether` or package `org.aether.*` | Correct is **`org.dempsay.aether`** |
+| groupId `org.aether` or package `org.aether.*` | Correct is **`org.dempsay.aether`** / **`org.dempsay.aether.api.*`** |
 
 ---
 
