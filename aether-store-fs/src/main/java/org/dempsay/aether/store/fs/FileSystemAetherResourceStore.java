@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -131,6 +133,39 @@ public final class FileSystemAetherResourceStore<T> extends AbstractAetherResour
                 return AetherResponses.fail(onError, AetherFailure.NotFound, "Resource not found: " + id);
             }
             return readPersisted(onError, path);
+        }
+    }
+
+    @Override
+    public ExceptionalResponse<List<AetherPersisted<T>>> list(
+            final ExceptionalListener onError,
+            final AetherPrincipal principal) {
+        synchronized (lock) {
+            Objects.requireNonNull(onError, "onError");
+            Objects.requireNonNull(principal, "principal");
+            final ExceptionalResponse<AetherAck> indexReady = ensureUniqueIndex(onError);
+            if (indexReady.wasError()) {
+                return ExceptionalResponse.failure();
+            }
+            if (!Files.isDirectory(typeDirectory)) {
+                return ExceptionalResponse.success(List.of());
+            }
+            return ExceptionalResource.<DirectoryStream<Path>, List<AetherPersisted<T>>>of(
+                    () -> Files.newDirectoryStream(typeDirectory, "*.json"),
+                    stream -> {
+                        final List<AetherPersisted<T>> collected = new ArrayList<>();
+                        for (final Path path : stream) {
+                            final ExceptionalResponse<AetherPersisted<T>> persisted = readPersistedQuiet(path);
+                            if (persisted.wasError()) {
+                                throw new AetherException(
+                                        AetherFailure.Internal,
+                                        "Failed to read document during list: " + path.getFileName());
+                            }
+                            collected.add(persisted.response());
+                        }
+                        collected.sort(Comparator.comparing(p -> p.metadata().id()));
+                        return List.copyOf(collected);
+                    }).with(onError).execute();
         }
     }
 

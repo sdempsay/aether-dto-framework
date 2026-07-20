@@ -1,5 +1,7 @@
 package org.dempsay.aether.store;
 
+import java.util.List;
+
 import org.dempsay.aether.access.AetherPrincipal;
 import org.dempsay.utils.exceptional.api.ExceptionalListener;
 import org.dempsay.utils.exceptional.api.ExceptionalResponse;
@@ -62,6 +64,26 @@ public interface AetherResourceStore<T> {
             ExceptionalListener onError,
             AetherPrincipal principal,
             String id);
+
+    /**
+     * GET collection — unfiltered list of all resources of this type.
+     *
+     * <p>Empty store succeeds with an empty list (not an error). Order is
+     * <strong>by resource id</strong> (natural {@link String} order) for
+     * stable enumeration. No filter, pagination, or query language (see
+     * backlog for filtered query).
+     *
+     * <p>{@code principal} is reserved for future AAA (may filter denied rows
+     * or hide existence consistently with {@link #read}).
+     *
+     * @param onError failure listener
+     * @param principal caller identity
+     * @return success with zero or more envelopes, or failure after {@code onError}
+     * @since 1.0.0
+     */
+    ExceptionalResponse<List<AetherPersisted<T>>> list(
+            ExceptionalListener onError,
+            AetherPrincipal principal);
 
     /**
      * PUT — full replace of the resource at {@code id}.

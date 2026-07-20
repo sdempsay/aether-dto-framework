@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.dempsay.aether.access.AetherPrincipal;
@@ -143,6 +144,31 @@ class TestInMemoryAetherResourceStore {
         assertTrue(store.delete(error::set, alice, "del-me").wasNoError());
         assertTrue(store.read(error::set, alice, "del-me").wasError());
         assertFailure(AetherFailure.NotFound);
+    }
+
+    @Test
+    void listEmptyStoreSucceedsWithEmptyList() {
+        final ExceptionalResponse<List<AetherPersisted<String>>> response = store.list(error::set, alice);
+
+        assertTrue(response.wasNoError());
+        assertTrue(response.response().isEmpty());
+    }
+
+    @Test
+    void listReturnsAllSortedById() {
+        store.create(error::set, alice, "body-b", "id-b");
+        store.create(error::set, alice, "body-a", "id-a");
+        store.create(error::set, alice, "body-c", "id-c");
+
+        final ExceptionalResponse<List<AetherPersisted<String>>> response = store.list(error::set, alice);
+
+        assertTrue(response.wasNoError());
+        final List<AetherPersisted<String>> all = response.response();
+        assertEquals(3, all.size());
+        assertEquals("id-a", all.get(0).metadata().id());
+        assertEquals("id-b", all.get(1).metadata().id());
+        assertEquals("id-c", all.get(2).metadata().id());
+        assertEquals("body-a", all.get(0).resource());
     }
 
     private void assertFailure(final AetherFailure expected) {

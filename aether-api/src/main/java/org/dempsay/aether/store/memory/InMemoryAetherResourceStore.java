@@ -2,6 +2,8 @@ package org.dempsay.aether.store.memory;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -178,6 +180,17 @@ public final class InMemoryAetherResourceStore<T> extends AbstractAetherResource
             return AetherResponses.fail(onError, AetherFailure.NotFound, "Resource not found: " + id);
         }
         return ExceptionalResponse.success(found);
+    }
+
+    @Override
+    public ExceptionalResponse<List<AetherPersisted<T>>> list(
+            final ExceptionalListener onError,
+            final AetherPrincipal principal) {
+        Objects.requireNonNull(onError, "onError");
+        Objects.requireNonNull(principal, "principal");
+        final List<AetherPersisted<T>> all = new ArrayList<>(entries.values());
+        all.sort(Comparator.comparing(p -> p.metadata().id()));
+        return ExceptionalResponse.success(List.copyOf(all));
     }
 
     @Override

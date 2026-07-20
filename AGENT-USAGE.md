@@ -218,7 +218,15 @@ Agents writing dempsay-style code should keep **I/O and store calls** on `Except
 
 ### Multi-resource (default)
 
-`UserDtoStore extends AetherResourceStore<UserDto>` — HTTP-like create/read/update/delete with id + version etag on update.
+`UserDtoStore extends AetherResourceStore<UserDto>` — HTTP-like create/read/update/delete with id + version etag on update, plus unfiltered **`list`**:
+
+```java
+ExceptionalResponse<List<AetherPersisted<UserDto>>> all =
+    store.list(onError, principal);
+// empty store → success with empty list; order is by resource id
+```
+
+No filter, pagination, or query language on `list` (see wishlist T8 / issue #7).
 
 ### Singleton
 

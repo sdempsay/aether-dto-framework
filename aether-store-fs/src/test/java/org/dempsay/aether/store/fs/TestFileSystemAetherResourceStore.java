@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.dempsay.aether.access.AetherPrincipal;
@@ -85,6 +86,31 @@ class TestFileSystemAetherResourceStore {
                 store.create(error::set, alice, new FsUser("x", "X"), "../evil");
         assertTrue(response.wasError());
         assertFailure(AetherFailure.Validation);
+    }
+
+    @Test
+    void listEmptyStoreSucceedsWithEmptyList() {
+        final ExceptionalResponse<List<AetherPersisted<FsUser>>> response = store.list(error::set, alice);
+
+        assertTrue(response.wasNoError());
+        assertTrue(response.response().isEmpty());
+    }
+
+    @Test
+    void listReturnsAllSortedById() {
+        store.create(error::set, alice, new FsUser("bob", "B"), "u-b");
+        store.create(error::set, alice, new FsUser("alice", "A"), "u-a");
+        store.create(error::set, alice, new FsUser("carol", "C"), "u-c");
+
+        final ExceptionalResponse<List<AetherPersisted<FsUser>>> response = store.list(error::set, alice);
+
+        assertTrue(response.wasNoError());
+        final List<AetherPersisted<FsUser>> all = response.response();
+        assertEquals(3, all.size());
+        assertEquals("u-a", all.get(0).metadata().id());
+        assertEquals("u-b", all.get(1).metadata().id());
+        assertEquals("u-c", all.get(2).metadata().id());
+        assertEquals("alice", all.get(0).resource().username());
     }
 
     private void assertFailure(final AetherFailure expected) {

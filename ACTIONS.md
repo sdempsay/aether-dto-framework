@@ -1,5 +1,12 @@
 # Actions log
 
+## 2026-07-20 — T9: AetherResourceStore.list (unfiltered read-all)
+
+- Added `list(onError, principal) → ExceptionalResponse<List<AetherPersisted<T>>>` on `AetherResourceStore`.
+- Empty store → empty list; order by resource id; no filter/pagination.
+- Implemented in `InMemoryAetherResourceStore` and `FileSystemAetherResourceStore` (scan `*.json`).
+- Tests: empty + multi-doc sort (memory + FS). Docs: AGENT-USAGE, PRD-updated. Closes #11.
+
 ## 2026-07-20 — Split store read-all from wishlist query (T9)
 
 - Opened [#11](https://github.com/sdempsay/aether-dto-framework/issues/11): unfiltered `list` / `readAll` on `AetherResourceStore`.
