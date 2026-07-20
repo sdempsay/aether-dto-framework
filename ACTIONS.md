@@ -1,10 +1,17 @@
 # Actions log
 
+## 2026-07-20 — T5c: store provider adapter codegen
+
+- `AetherStoreProvidersProcessor` + `ProviderAdapter.java.ftl`: emits `Fs*Store` / `Memory*Store` implementing generated `*Store` ports.
+- Validation: non-empty lists, `@AetherRecord` records, singleton list requires `@Singleton`, multi lists reject `@Singleton`.
+- Un-finalized InMemory/FS store classes so adapters can extend them.
+- Tests for happy path + empty/wrong-list failures. Closes #8.
+
 ## 2026-07-20 — T5b: @AetherStoreProviders annotation API
 
 - New module `aether-store-gen` with `org.dempsay.aether.store.gen.AetherStoreProviders`.
 - Placement: server package-info / type only; SOURCE retention; filesystem / singletonFilesystem / memory class lists.
-- Docs: PRD-updated, AGENT-USAGE, README, agents. Processor codegen remains T5c (#8). Closes #9.
+- Docs: PRD-updated, AGENT-USAGE, README, agents. Processor codegen was T5c (#8). Closes #9.
 
 ## 2026-07-20 — Generated builders pass dempsay checkstyle
 

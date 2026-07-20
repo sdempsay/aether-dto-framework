@@ -12,21 +12,46 @@
   <packaging>jar</packaging>
 
   <description>
-    Server-side store provider annotations and (T5c) JSR-269 processor for generating
-    Fs/Memory *Store adapters from @AetherStoreProviders
+    Server-side @AetherStoreProviders annotation and JSR-269 processor that generates
+    Fs/Memory *Store provider adapters
   </description>
 
   <!--
-    Compile-time / server-compile surface only — not a persistence backend.
-    Do not install into OSGi as a runtime API for DTOs; depend on it from the
-    server module (compile + future annotationProcessorPaths). Empty exports.
+    Compile-time only for consumers (annotation + processor path).
+    Not a runtime persistence backend; empty OSGi exports by default.
   -->
   <dependencies>
-    <!-- Types referenced only in Javadoc for @AetherRecord / @Singleton guidance. -->
     <dependency>
       <groupId>org.dempsay.aether</groupId>
       <artifactId>aether-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dempsay.utils</groupId>
+      <artifactId>exceptional</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.dempsay.support.jsr269</groupId>
+      <artifactId>jsr269-utilities</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.freemarker</groupId>
+      <artifactId>freemarker</artifactId>
+    </dependency>
+    <!-- Test compile of generated adapters -->
+    <dependency>
+      <groupId>org.dempsay.aether</groupId>
+      <artifactId>aether-store-fs</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>

@@ -545,7 +545,7 @@ Hand-writing `FsXStore extends FileSystem… implements XStore` does not scale t
 | Issue | Task | Status |
 |-------|------|--------|
 | [#9](https://github.com/sdempsay/aether-dto-framework/issues/9) | `@AetherStoreProviders` annotation API | **Done** — `org.dempsay.aether.store.gen.AetherStoreProviders` in `aether-store-gen` |
-| [#8](https://github.com/sdempsay/aether-dto-framework/issues/8) | `aether-store-gen` processor: emit Fs/Memory adapters | pending (T5c) |
+| [#8](https://github.com/sdempsay/aether-dto-framework/issues/8) | `aether-store-gen` processor: emit Fs/Memory adapters | **Done** (T5c) — `Fs{Record}Store` / `Memory{Record}Store` |
 | [#10](https://github.com/sdempsay/aether-dto-framework/issues/10) | Optional SCR `@Component` on generated adapters | pending (T5d) |
 
 **Annotation (T5b):**
@@ -562,7 +562,9 @@ package com.example.product.server.stores;
 - Module: `org.dempsay.aether:aether-store-gen` (server compile dependency; not a runtime DTO API).
 - Retention: `SOURCE` (processor-only; no OSGi import of the annotation type).
 - Target: `PACKAGE` or `TYPE` — **server** package-info / marker type, **not** DTO records in api.
-- Rules (processor T5c): each type `@AetherRecord` record; singleton list → `@Singleton`; at least one list non-empty.
+- Rules (processor): each type `@AetherRecord` record; `singletonFilesystem` → `@Singleton`; multi lists must not include `@Singleton`; at least one list non-empty.
+- Generated: `Fs{Record}Store extends FileSystem… implements {Record}Store` (ctor `Path root`); `Memory{Record}Store extends InMemory…(Class)` for multi-resource memory.
+- Provider store classes are **non-final** so adapters can extend them.
 - Keeps api free of `aether-store-fs`.
 
 ### Wishlist (after filtering)

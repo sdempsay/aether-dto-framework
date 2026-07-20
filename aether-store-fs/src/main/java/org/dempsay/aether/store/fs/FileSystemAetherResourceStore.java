@@ -44,7 +44,7 @@ import org.dempsay.utils.exceptional.api.ExceptionalResponse;
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 1.0.0
  */
-public final class FileSystemAetherResourceStore<T> extends AbstractAetherResourceStore<T> {
+public class FileSystemAetherResourceStore<T> extends AbstractAetherResourceStore<T> {
     private final Object lock = new Object();
     private final Path typeDirectory;
     private final Class<T> resourceType;

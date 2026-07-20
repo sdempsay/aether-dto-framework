@@ -49,7 +49,7 @@ import org.dempsay.utils.exceptional.api.ExceptionalResponse;
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 1.0.0
  */
-public final class InMemoryAetherResourceStore<T> extends AbstractAetherResourceStore<T> {
+public class InMemoryAetherResourceStore<T> extends AbstractAetherResourceStore<T> {
     private final ConcurrentMap<String, AetherPersisted<T>> entries = new ConcurrentHashMap<>();
     private final Clock clock;
     private final Supplier<String> versionGenerator;

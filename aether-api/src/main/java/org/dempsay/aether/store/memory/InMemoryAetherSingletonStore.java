@@ -30,7 +30,7 @@ import org.dempsay.utils.exceptional.api.ExceptionalResponse;
  * @author Shawn Dempsay {@literal <shawn@dempsay.org>}
  * @since 1.0.0
  */
-public final class InMemoryAetherSingletonStore<T> implements AetherSingletonStore<T> {
+public class InMemoryAetherSingletonStore<T> implements AetherSingletonStore<T> {
     static final String SINGLETON_ID = "_singleton";
 
     private final AtomicReference<AetherPersisted<T>> holder = new AtomicReference<>();
