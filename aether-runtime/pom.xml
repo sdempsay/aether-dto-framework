@@ -15,7 +15,8 @@
 
   <!--
     Maven convenience only: empty jar, no Export-Package (default).
-    OSGi consumers should wire aether-api (+ exceptional) and optional aether-store-* directly.
+    OSGi consumers should wire aether-api (+ exceptional) and optional
+    aether-store-memory / aether-store-fs directly.
   -->
   <dependencies>
     <dependency>

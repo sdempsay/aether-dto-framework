@@ -22,7 +22,7 @@ Aether is a **compile-time–generated** DTO + persistence-port layer for **Java
    - `{Name}Builder` — validated builder returning `ExceptionalResponse<T>`
    - `{Name}Store` — empty interface extending `AetherResourceStore<T>` or `AetherSingletonStore<T>` (for SCR / type-based injection)
 3. You persist via **store ports** (`AetherResourceStore` / `AetherSingletonStore`), not a framework-owned global registry.
-4. **Providers** are separate artifacts (in-memory in `aether-api`, filesystem in `aether-store-fs`).
+4. **Providers** are separate artifacts (`aether-store-memory`, `aether-store-fs`).
 
 **Design goal:** app code depends on **API ports** so unit tests never require a live DB — swap in-memory fakes, temp-dir FS, or allow-all AAA.
 
@@ -40,7 +40,8 @@ Aether is a **compile-time–generated** DTO + persistence-port layer for **Java
 
 | Artifact | Role | When to depend |
 |----------|------|----------------|
-| `aether-api` | Annotations, `AetherBuilder`, store ports, in-memory fakes, `ValidationException` | Always (runtime + compile of DTOs) |
+| `aether-api` | Annotations, `AetherBuilder`, store ports, `ValidationException` (contracts only) | Always (runtime + compile of DTOs) |
+| `aether-store-memory` | In-memory store provider | Tests / light use / OSGi demo without FS |
 | `aether-builder-gen` | Annotation processor | **Processor path only** (never runtime classpath for app logic) |
 | `aether-runtime` | Maven aggregator: pulls `aether-api` + `exceptional` | Non-OSGi apps that want one dependency |
 | `aether-store-fs` | Filesystem JSON provider (Gson) | When you need FS persistence |
@@ -269,7 +270,8 @@ Aether jars are built with **`dempsay-felix-parent`** (bnd). Use this section wh
 
 | Artifact | Bundle-SymbolicName | Export-Package | Install in framework? |
 |----------|---------------------|----------------|------------------------|
-| `aether-api` | `org.dempsay.aether.aether-api` | `org.dempsay.aether.api.*` (+ `store.memory` fakes) | **Yes** |
+| `aether-api` | `org.dempsay.aether.aether-api` | `org.dempsay.aether.api.*` | **Yes** |
+| `aether-store-memory` | `org.dempsay.aether.aether-store-memory` | `org.dempsay.aether.store.memory` | **Yes**, for in-memory |
 | `aether-store-fs` | `org.dempsay.aether.aether-store-fs` | `org.dempsay.aether.store.fs` | **Yes**, if using FS |
 | `exceptional` | (exceptional’s BSN) | exceptional API packages | **Yes** (api imports it) |
 | Gson | third-party OSGi jar | `com.google.gson` | **Yes**, if using `aether-store-fs` |
@@ -280,7 +282,7 @@ Java EE requirement: **JavaSE 21** (`Require-Capability: osgi.ee`).
 
 ### OSGi consumer rules
 
-1. **Depend on `aether-api` (+ exceptional), not `aether-runtime`.** Runtime has no useful Export-Package.
+1. **Depend on `aether-api` (+ exceptional), not `aether-runtime`.** Runtime has no useful Export-Package. Add `aether-store-memory` and/or `aether-store-fs` for providers.
 2. **Never install `aether-builder-gen` into Felix.** Keep it on `annotationProcessorPaths` at build time only. Generated `*Builder` / `*Store` sources land in the **consumer** bundle.
 3. Parent consumer modules from **`dempsay-felix-parent`** so the app module is itself a bundle (see felix-parent AGENT-USAGE).
 4. Export **your** packages (`felix.bundle.exportcontents`), e.g. DTO + service API packages. Import-Package for `org.dempsay.aether.*` is calculated by bnd from bytecode — do not force `Import-Package: *` or blanket `resolution:=optional` unless the user asks.
@@ -444,7 +446,7 @@ Do **not** put this annotation on api DTO packages. Parent server modules from *
 ## Reference consumers
 
 - **aether-test** (sibling): Felix multi-module demo (`org.dempsay.aether.test`) using aether DTOs, in-memory stores, Gogo commands — useful smoke pattern after packages/coordinates stay aligned.
-- This repo’s unit tests under `aether-api` / `aether-store-fs` for store behavior examples.
+- This repo’s unit tests under `aether-store-memory` / `aether-store-fs` for store behavior examples.
 
 ---
 

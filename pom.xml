@@ -21,6 +21,7 @@
     <module>aether-api</module>
     <module>aether-builder-gen</module>
     <module>aether-runtime</module>
+    <module>aether-store-memory</module>
     <module>aether-store-fs</module>
     <module>aether-store-gen</module>
   </modules>
@@ -47,6 +48,11 @@
       <dependency>
         <groupId>org.dempsay.aether</groupId>
         <artifactId>aether-runtime</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.dempsay.aether</groupId>
+        <artifactId>aether-store-memory</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

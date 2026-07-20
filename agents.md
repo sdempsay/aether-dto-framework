@@ -74,9 +74,10 @@ When reviewing or fixing exceptional compliance, scope checks to `src/main` and 
 
 | Module | Role |
 |--------|------|
-| `aether-api` | Annotations, builders, store ports, in-memory fakes, `ValidationException` (OSGi exports) |
+| `aether-api` | Annotations, builders, store ports, `ValidationException` (contracts only) |
 | `aether-builder-gen` | JSR-269 processor: builders + `*Store` interfaces (compile-time only; not for Felix install) |
 | `aether-runtime` | Consumer-facing Maven dependency aggregator (no OSGi exports) |
+| `aether-store-memory` | In-memory provider (tests); OSGi exports `org.dempsay.aether.store.memory` |
 | `aether-store-fs` | Filesystem JSON provider (Gson); OSGi exports `org.dempsay.aether.store.fs` |
 | `aether-store-gen` | `@AetherStoreProviders` + processor → Fs/Memory adapters — server/impl only |
 

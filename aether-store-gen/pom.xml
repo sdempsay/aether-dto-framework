@@ -44,6 +44,11 @@
       <artifactId>aether-store-fs</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.dempsay.aether</groupId>
+      <artifactId>aether-store-memory</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- For scr=true generated sources in processor tests -->
     <dependency>
       <groupId>org.osgi</groupId>

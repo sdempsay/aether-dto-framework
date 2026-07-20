@@ -8,20 +8,19 @@
     <version>1.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>aether-api</artifactId>
+  <artifactId>aether-store-memory</artifactId>
   <packaging>jar</packaging>
 
-  <description>Public API: annotations, AetherBuilder, store ports, and ValidationException</description>
+  <description>In-memory persistence provider for Aether (tests and lightweight use)</description>
 
   <properties>
-    <!-- Contracts only; providers are separate bundles (aether-store-memory, aether-store-fs) -->
-    <felix.bundle.exportcontents>org.dempsay.aether.api,org.dempsay.aether.api.*</felix.bundle.exportcontents>
+    <felix.bundle.exportcontents>org.dempsay.aether.store.memory,org.dempsay.aether.store.memory.*</felix.bundle.exportcontents>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>org.dempsay.utils</groupId>
-      <artifactId>exceptional</artifactId>
+      <groupId>org.dempsay.aether</groupId>
+      <artifactId>aether-api</artifactId>
     </dependency>
   </dependencies>
 </project>

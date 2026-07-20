@@ -10,11 +10,12 @@ Aether is a minimal, annotation-driven, compile-time-generated persistence DTO l
 
 | Module | Purpose | OSGi |
 |--------|---------|------|
-| `aether-api` | Annotations, builders, store ports, in-memory fakes | Bundle; exports `org.dempsay.aether.*` API packages |
+| `aether-api` | Annotations, builders, store ports (contracts only) | Bundle; exports `org.dempsay.aether.api.*` |
 | `aether-builder-gen` | JSR-269 annotation processor (compile-time only) | Bundle metadata only; **not** for OSGi runtime install |
 | `aether-runtime` | Maven dependency aggregator (`aether-api` + exceptional) | Empty jar / no exports — use `aether-api` in OSGi |
+| `aether-store-memory` | In-memory store provider (tests / light use) | Bundle; exports `org.dempsay.aether.store.memory` |
 | `aether-store-fs` | Filesystem JSON store provider (Gson) | Bundle; exports `org.dempsay.aether.store.fs` |
-| `aether-store-gen` | `@AetherStoreProviders` (+ future server adapter processor) | Compile-time / server only; no public runtime exports |
+| `aether-store-gen` | `@AetherStoreProviders` + provider adapter processor | Compile-time / server only; no public runtime exports |
 
 ## Quick Start
 
@@ -98,7 +99,8 @@ Parent: `org.dempsay.maven:dempsay-felix-parent` (bnd + provided OSGi APIs). See
 
 | Bundle | Symbolic name | Exports |
 |--------|---------------|---------|
-| `aether-api` | `org.dempsay.aether.aether-api` | access, annotations, builder, failure, store (+ memory/unique), validation |
+| `aether-api` | `org.dempsay.aether.aether-api` | `org.dempsay.aether.api.*` |
+| `aether-store-memory` | `org.dempsay.aether.aether-store-memory` | `org.dempsay.aether.store.memory` |
 | `aether-store-fs` | `org.dempsay.aether.aether-store-fs` | `org.dempsay.aether.store.fs` |
 | `aether-runtime` | `org.dempsay.aether.aether-runtime` | none (Maven-only aggregator) |
 | `aether-builder-gen` | `org.dempsay.aether.aether-builder-gen` | none (compile-time processor) |
@@ -106,9 +108,10 @@ Parent: `org.dempsay.maven:dempsay-felix-parent` (bnd + provided OSGi APIs). See
 **OSGi consumer checklist**
 
 1. Install **`aether-api`** and **`exceptional`** (Import-Package from api).
-2. Optional FS provider: install **`aether-store-fs`** and a **Gson** OSGi bundle (Import-Package `com.google.gson`).
-3. Do **not** install `aether-builder-gen` into the framework — use it only on the Maven compiler `annotationProcessorPaths`.
-4. Prefer **`aether-api`** over `aether-runtime` as the OSGi dependency; runtime is for non-OSGi Maven convenience.
+2. In-memory provider: install **`aether-store-memory`**.
+3. Optional FS provider: install **`aether-store-fs`** and a **Gson** OSGi bundle (Import-Package `com.google.gson`).
+4. Do **not** install `aether-builder-gen` into the framework — use it only on the Maven compiler `annotationProcessorPaths`.
+5. Prefer **`aether-api`** over `aether-runtime` as the OSGi dependency; runtime is for non-OSGi Maven convenience.
 5. Generated `*Store` interfaces (T5a) are for app SCR wiring; framework provider SCR adapters are T5b–T5d.
 
 Verify headers after package:

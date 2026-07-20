@@ -178,6 +178,7 @@ class TestAetherStoreProvidersProcessor {
         entries.add(new File("target/classes").getAbsolutePath());
         entries.add(new File("../aether-api/target/classes").getAbsolutePath());
         entries.add(new File("../aether-store-fs/target/classes").getAbsolutePath());
+        entries.add(new File("../aether-store-memory/target/classes").getAbsolutePath());
         entries.add(resolveDependency("org.dempsay.utils", "exceptional", "1.0.9"));
         entries.add(resolveDependency("org.dempsay.support.jsr269", "jsr269-utilities", "1.0.1"));
         entries.add(resolveDependency("org.freemarker", "freemarker", "2.3.34"));

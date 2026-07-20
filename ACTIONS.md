@@ -1,5 +1,11 @@
 # Actions log
 
+## 2026-07-20 — aether-store-memory as its own bundle
+
+- Moved `InMemoryAetherResourceStore` / `InMemoryAetherSingletonStore` from `aether-api` into new module **`aether-store-memory`**.
+- `aether-api` exports contracts only; memory provider is a separate OSGi bundle.
+- Updated reactor, store-gen tests, aether-test impl/felix deps.
+
 ## 2026-07-20 — Public API under `org.dempsay.aether.api.*`
 
 - Moved annotations, access, builder, failure, validation, and store ports/config/unique under `org.dempsay.aether.api.*`.

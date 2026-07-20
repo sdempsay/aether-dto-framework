@@ -3,8 +3,8 @@
 ## Maven coordinates and package namespace
 
 - **groupId:** `org.dempsay.aether` (not bare `org.aether`).
-- **Java packages:** public contracts under **`org.dempsay.aether.api.*`** (`api.annotations`, `api.access`, `api.builder`, `api.failure`, `api.validation`, `api.store`, `api.store.config`, `api.store.unique`). Implementations: `store.memory`, `store.fs`, `store.gen`.
-- **Artifact IDs:** `aether`, `aether-api`, `aether-builder-gen`, `aether-runtime`, `aether-store-fs` (module names unchanged).
+- **Java packages:** public contracts under **`org.dempsay.aether.api.*`**. Implementations: `store.memory` (`aether-store-memory`), `store.fs` (`aether-store-fs`), `store.gen` (`aether-store-gen`).
+- **Artifact IDs:** `aether`, `aether-api`, `aether-builder-gen`, `aether-runtime`, `aether-store-memory`, `aether-store-fs`, `aether-store-gen`.
 - **Version:** `1.1.0-SNAPSHOT` (post-rename baseline).
 - Rationale: match dempsay reverse-DNS (`org.dempsay.utils`, `org.dempsay.support.jsr269`, consumer `org.dempsay.aether.test`); avoid collision/confusion with historical Maven/Eclipse Aether.
 
@@ -434,7 +434,7 @@ Consumers depend only on the provider(s) they use. Providers must not drag unrel
 
 | Module | Artifact role | Contents |
 |--------|---------------|----------|
-| `aether-api` | Contracts | Annotations, builders API, `AetherResourceStore` / `AetherSingletonStore`, `AetherPersisted`, metadata, `@Unique` / `@Singleton`, persistence exceptions, `AetherPrincipal` / `AetherAccessControl` SPI + checking decorator (no I/O backend) |
+| `aether-api` | Contracts only | Annotations, builders API, store ports, envelope types, `@Unique` / `@Singleton`, failures, `FileStoreConfig`, unique SPI helpers — **no** store implementations |
 | `aether-builder-gen` | Compile-time only | JSR-269 + FreeMarker; later unique-group / store helper codegen |
 | `aether-runtime` | Thin consumer aggregator (current MVP) | Continues to re-export `aether-api` + exceptional for DTO users **without** requiring a store. Does **not** embed FS/JDBC implementations. |
 | `aether-store-fs` | **Provider** | Filesystem JSON store(s) only; depends on `aether-api` (+ Gson or chosen JSON lib as needed) |
@@ -446,7 +446,8 @@ aether/
 ├── aether-api/
 ├── aether-builder-gen/
 ├── aether-runtime/          # DTO runtime aggregator — not "all providers"
-├── aether-store-fs/         # first persistence provider
+├── aether-store-memory/     # in-memory provider (tests / light use)
+├── aether-store-fs/         # filesystem JSON provider
 └── aether-store-jdbc/       # example future provider
 ```
 
