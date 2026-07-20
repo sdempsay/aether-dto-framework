@@ -1,5 +1,11 @@
 # Actions log
 
+## 2026-07-20 — AGENT-USAGE.md for consumers
+
+- Added `AGENT-USAGE.md`: how agents consume Aether (coords, processor path, DTOs/builders/stores, exceptional, in-memory vs FS).
+- Dedicated **OSGi** section: bundle matrix, install rules, SCR/`*Store`, Felix runtime deps, common mistakes.
+- Linked from `README.md` and `agents.md` (maintain vs consume split).
+
 ## 2026-07-20 — T5: OSGi bundle packaging (dempsay-felix-parent)
 
 - Reactor parent: `dempsay-parent` → `dempsay-felix-parent:1.1.0-SNAPSHOT` (bnd + provided OSGi APIs).

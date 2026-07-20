@@ -2,6 +2,8 @@
 
 Guidance for AI agents working in this repository. Global rules in `~/.grok/AGENTS.md` also apply; where they conflict on VCS, **this repo uses GitHub**.
 
+**Consuming Aether from another project** (Maven deps, processors, OSGi): see **[AGENT-USAGE.md](AGENT-USAGE.md)** — not this file.
+
 ## VCS
 
 - Remote: [sdempsay/aether-dto-framework](https://github.com/sdempsay/aether-dto-framework)

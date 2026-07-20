@@ -4,6 +4,8 @@ Aether is a minimal, annotation-driven, compile-time-generated persistence DTO l
 
 **Design goal:** code against API ports so applications stay **unit-testable without a running database** — swap in fakes or lightweight providers (and test-friendly AAA) instead of requiring MongoDB, PostgreSQL, and the like just to run tests. See `PRD.md` core principles and `PRD-updated.md`.
 
+**Agents integrating Aether:** start with **[AGENT-USAGE.md](AGENT-USAGE.md)** (Maven + OSGi consumer guide).
+
 ## Modules
 
 | Module | Purpose | OSGi |
