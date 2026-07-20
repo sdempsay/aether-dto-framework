@@ -1,5 +1,11 @@
 # Actions log
 
+## 2026-07-20 — T5b: @AetherStoreProviders annotation API
+
+- New module `aether-store-gen` with `org.dempsay.aether.store.gen.AetherStoreProviders`.
+- Placement: server package-info / type only; SOURCE retention; filesystem / singletonFilesystem / memory class lists.
+- Docs: PRD-updated, AGENT-USAGE, README, agents. Processor codegen remains T5c (#8). Closes #9.
+
 ## 2026-07-20 — Generated builders pass dempsay checkstyle
 
 - FreeMarker `Builder.java.ftl` / `validation.java.ftl`: `final` method params, empty ctor `{ }`, blank line between java/third-party imports, `final` length locals, minimal class/method Javadoc.

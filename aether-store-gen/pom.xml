@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.dempsay.aether</groupId>
+    <artifactId>aether</artifactId>
+    <version>1.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>aether-store-gen</artifactId>
+  <packaging>jar</packaging>
+
+  <description>
+    Server-side store provider annotations and (T5c) JSR-269 processor for generating
+    Fs/Memory *Store adapters from @AetherStoreProviders
+  </description>
+
+  <!--
+    Compile-time / server-compile surface only — not a persistence backend.
+    Do not install into OSGi as a runtime API for DTOs; depend on it from the
+    server module (compile + future annotationProcessorPaths). Empty exports.
+  -->
+  <dependencies>
+    <!-- Types referenced only in Javadoc for @AetherRecord / @Singleton guidance. -->
+    <dependency>
+      <groupId>org.dempsay.aether</groupId>
+      <artifactId>aether-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+</project>

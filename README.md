@@ -14,6 +14,7 @@ Aether is a minimal, annotation-driven, compile-time-generated persistence DTO l
 | `aether-builder-gen` | JSR-269 annotation processor (compile-time only) | Bundle metadata only; **not** for OSGi runtime install |
 | `aether-runtime` | Maven dependency aggregator (`aether-api` + exceptional) | Empty jar / no exports — use `aether-api` in OSGi |
 | `aether-store-fs` | Filesystem JSON store provider (Gson) | Bundle; exports `org.dempsay.aether.store.fs` |
+| `aether-store-gen` | `@AetherStoreProviders` (+ future server adapter processor) | Compile-time / server only; no public runtime exports |
 
 ## Quick Start
 

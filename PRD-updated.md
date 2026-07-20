@@ -538,17 +538,32 @@ public interface AppConfigDtoStore extends AetherSingletonStore<AppConfigDto> {}
 
 **Not required for unit tests** that inject `AetherResourceStore<T>` directly; required for production OSGi SCR wiring.
 
-### Server provider codegen (Option A) — backlog
+### Server provider codegen (Option A)
 
 Hand-writing `FsXStore extends FileSystem… implements XStore` does not scale to dozens of DTOs. **Server-side** generation:
 
-| Issue | Task |
-|-------|------|
-| [#9](https://github.com/sdempsay/aether-dto-framework/issues/9) | `@AetherStoreProviders` annotation API |
-| [#8](https://github.com/sdempsay/aether-dto-framework/issues/8) | `aether-store-gen`: emit Fs/Memory adapters from that annotation |
-| [#10](https://github.com/sdempsay/aether-dto-framework/issues/10) | Optional SCR `@Component` on generated adapters |
+| Issue | Task | Status |
+|-------|------|--------|
+| [#9](https://github.com/sdempsay/aether-dto-framework/issues/9) | `@AetherStoreProviders` annotation API | **Done** — `org.dempsay.aether.store.gen.AetherStoreProviders` in `aether-store-gen` |
+| [#8](https://github.com/sdempsay/aether-dto-framework/issues/8) | `aether-store-gen` processor: emit Fs/Memory adapters | pending (T5c) |
+| [#10](https://github.com/sdempsay/aether-dto-framework/issues/10) | Optional SCR `@Component` on generated adapters | pending (T5d) |
 
-Trigger lives on **server** package-info / module type (`filesystem = { MyDto.class, … }`), not on DTOs in api—so api stays free of `aether-store-fs`.
+**Annotation (T5b):**
+
+```java
+@AetherStoreProviders(
+    filesystem = { MyDto.class, OrderDto.class },
+    singletonFilesystem = { AppConfigDto.class },
+    memory = { MyDto.class }
+)
+package com.example.product.server.stores;
+```
+
+- Module: `org.dempsay.aether:aether-store-gen` (server compile dependency; not a runtime DTO API).
+- Retention: `SOURCE` (processor-only; no OSGi import of the annotation type).
+- Target: `PACKAGE` or `TYPE` — **server** package-info / marker type, **not** DTO records in api.
+- Rules (processor T5c): each type `@AetherRecord` record; singleton list → `@Singleton`; at least one list non-empty.
+- Keeps api free of `aether-store-fs`.
 
 ### Wishlist (after filtering)
 

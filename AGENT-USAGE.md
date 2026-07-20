@@ -298,7 +298,7 @@ Java EE requirement: **JavaSE 21** (`Require-Capability: osgi.ee`).
    ```
 
    Prefer type-based DS references (`@Reference UserDtoStore`) over raw `AetherResourceStore<UserDto>` where SCR erasure is painful.
-6. **Provider SCR adapters** (auto-generated Fs/Memory components from annotations) are **not** finished yet (backlog T5b–T5d). Until then, hand-write `@Component` wrappers as above or construct stores in activators/tests.
+6. **Provider adapters:** declare types with **`@AetherStoreProviders`** on a **server** `package-info` / marker type (`org.dempsay.aether:aether-store-gen`). Adapter class generation is **T5c** (not shipped yet) — until then hand-write `FsXStore extends FileSystem… implements XStore` or compose in-memory stores. Optional SCR `@Component` on generated adapters is **T5d**.
 7. **Do not unpack / shade `aether-api` into the consumer jar** once proper Export-Package is available. Older `aether-test` unpack hacks were workarounds for pre-bundle aether; prefer Import-Package resolution.
 8. FS stack at runtime: install **`aether-api`**, **`exceptional`**, **`aether-store-fs`**, and a **Gson** bundle that exports `com.google.gson` (and stream packages if required).
 
@@ -365,6 +365,31 @@ unzip -p aether-store-fs/target/aether-store-fs-*.jar META-INF/MANIFEST.MF
 | Forcing `Import-Package: *` | Leave bnd defaults |
 
 ---
+
+## Server store providers (`@AetherStoreProviders`)
+
+```xml
+<!-- server/impl module only -->
+<dependency>
+  <groupId>org.dempsay.aether</groupId>
+  <artifactId>aether-store-gen</artifactId>
+  <version>${aether.version}</version>
+  <!-- provided/compile is fine; not needed at OSGi runtime for SOURCE retention -->
+</dependency>
+```
+
+```java
+@AetherStoreProviders(
+    filesystem = { UserDto.class },
+    singletonFilesystem = { AppConfigDto.class }
+)
+package com.example.app.server.stores;
+
+import org.dempsay.aether.store.gen.AetherStoreProviders;
+// + DTO imports
+```
+
+Do **not** put this annotation on api DTO packages. Processor that emits adapters: T5c.
 
 ## Agent checklist (consuming Aether)
 
