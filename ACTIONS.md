@@ -1,5 +1,15 @@
 # Actions log
 
+## 2026-07-20 — Correct Maven coordinates and Java packages
+
+- Renamed `groupId` `org.aether` → `org.dempsay.aether` (aligned with dempsay namespace and `aether-test`).
+- Renamed Java packages `org.aether.*` → `org.dempsay.aether.*` (sources, templates, processor FQN, docs).
+- Bumped version `0.1.0-SNAPSHOT` → `1.1.0-SNAPSHOT`.
+- Updated consumer `aether-test` dependency groupIds, imports, OSGi export/unpack includes, and `aether.version`.
+- Artifact IDs unchanged (`aether`, `aether-api`, …). Historical `review-aether-*.md` left as-is.
+- Javadoc `@since` tags set to `1.0.0` (API introduction baseline; project version remains `1.1.0-SNAPSHOT`).
+- `code-review diff` skipped this session (tool hung / not usable); rename is mechanical.
+
 ## 2026-07-14 — Issues for @AetherStoreProviders server codegen (Option A)
 
 - Opened #9 (annotation API), #8 (aether-store-gen adapters), #10 (optional SCR on generated providers).

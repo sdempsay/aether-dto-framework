@@ -2,7 +2,7 @@ package fixtures;
 
 import java.util.List;
 
-import org.aether.annotations.AetherRecord;
+import org.dempsay.aether.annotations.AetherRecord;
 
 @AetherRecord
 public record InvalidDto(List<String> items) {}

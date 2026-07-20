@@ -18,9 +18,9 @@ Add `aether-runtime` and register the annotation processor:
 
 ```xml
 <dependency>
-  <groupId>org.aether</groupId>
+  <groupId>org.dempsay.aether</groupId>
   <artifactId>aether-runtime</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
 </dependency>
 
 <plugin>
@@ -29,9 +29,9 @@ Add `aether-runtime` and register the annotation processor:
   <configuration>
     <annotationProcessorPaths>
       <path>
-        <groupId>org.aether</groupId>
+        <groupId>org.dempsay.aether</groupId>
         <artifactId>aether-builder-gen</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>1.1.0-SNAPSHOT</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -41,10 +41,10 @@ Add `aether-runtime` and register the annotation processor:
 ## Define a DTO
 
 ```java
-import org.aether.annotations.AetherRecord;
-import org.aether.annotations.MaxLength;
-import org.aether.annotations.MinLength;
-import org.aether.annotations.Nullable;
+import org.dempsay.aether.annotations.AetherRecord;
+import org.dempsay.aether.annotations.MaxLength;
+import org.dempsay.aether.annotations.MinLength;
+import org.dempsay.aether.annotations.Nullable;
 
 @AetherRecord
 public record UserDto(

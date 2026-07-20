@@ -67,9 +67,9 @@ Annotation processor paths (`maven-compiler-plugin` / `annotationProcessorPaths`
 
 | Artifact | Version property | Used by |
 |--------|------------------|---------|
-| `org.aether:aether-api` | `${project.version}` | `aether-builder-gen`, `aether-runtime` |
-| `org.aether:aether-builder-gen` | `${project.version}` | Consumer `annotationProcessorPaths` (documented in README) |
-| `org.aether:aether-runtime` | `${project.version}` | Consumers |
+| `org.dempsay.aether:aether-api` | `${project.version}` | `aether-builder-gen`, `aether-runtime` |
+| `org.dempsay.aether:aether-builder-gen` | `${project.version}` | Consumer `annotationProcessorPaths` (documented in README) |
+| `org.dempsay.aether:aether-runtime` | `${project.version}` | Consumers |
 | `org.dempsay.support.jsr269:jsr269-utilities` | `${jsr269-utilities.version}` | `aether-builder-gen` (compile + processor path) |
 | `org.freemarker:freemarker` | `${freemarker.version}` | `aether-builder-gen` (compile) |
 | `org.dempsay.utils:exceptional` | `${exceptional.version}` | `aether-builder-gen` (provided), `aether-runtime` (compile) |
@@ -282,7 +282,7 @@ Aether uses [exceptional-java](https://github.com/sdempsay/exceptional-java) for
 **Project rule**: Unless there is a specific reason to use `try/catch` (e.g. inside `ExceptionalSupplier.of(() -> ...)` where the library owns the catch), Aether code uses `ExceptionalSupplier`, `ExceptionalAction`, and `ExceptionalResponse`.
 
 ### Exception Types
-- `ValidationException` in `aether-api` (`org.aether.validation.ValidationException`, extends `RuntimeException`)
+- `ValidationException` in `aether-api` (`org.dempsay.aether.validation.ValidationException`, extends `RuntimeException`)
   → Contains list of error messages via `getErrors()` returning `List<String>`.
 
 ### Builder Contract
@@ -379,17 +379,17 @@ Resolved during planning (2026-07):
 <dependencyManagement>
   <dependencies>
     <dependency>
-      <groupId>org.aether</groupId>
+      <groupId>org.dempsay.aether</groupId>
       <artifactId>aether-api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.aether</groupId>
+      <groupId>org.dempsay.aether</groupId>
       <artifactId>aether-builder-gen</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.aether</groupId>
+      <groupId>org.dempsay.aether</groupId>
       <artifactId>aether-runtime</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -417,7 +417,7 @@ Child module example (no versions on managed deps):
 ```xml
 <dependencies>
   <dependency>
-    <groupId>org.aether</groupId>
+    <groupId>org.dempsay.aether</groupId>
     <artifactId>aether-api</artifactId>
   </dependency>
   <dependency>
@@ -433,7 +433,7 @@ Child module example (no versions on managed deps):
 
 ```java
 // aether-api/src/main/java/org/aether/annotations/
-package org.aether.annotations;
+package org.dempsay.aether.annotations;
 
 import java.lang.annotation.*;
 
@@ -481,7 +481,7 @@ public final class ${builderName} implements AetherBuilder<${recordName}><#if vi
 
 ```java
 // aether-api/src/main/java/org/aether/validation/
-package org.aether.validation;
+package org.dempsay.aether.validation;
 
 import java.util.List;
 

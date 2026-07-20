@@ -1,5 +1,13 @@
 # PRD updates (learned requirements)
 
+## Maven coordinates and package namespace
+
+- **groupId:** `org.dempsay.aether` (not bare `org.aether`).
+- **Java packages:** `org.dempsay.aether.*` (e.g. `org.dempsay.aether.annotations`, `org.dempsay.aether.store`).
+- **Artifact IDs:** `aether`, `aether-api`, `aether-builder-gen`, `aether-runtime`, `aether-store-fs` (module names unchanged).
+- **Version:** `1.1.0-SNAPSHOT` (post-rename baseline).
+- Rationale: match dempsay reverse-DNS (`org.dempsay.utils`, `org.dempsay.support.jsr269`, consumer `org.dempsay.aether.test`); avoid collision/confusion with historical Maven/Eclipse Aether.
+
 ## High-level goal: testable without infrastructure
 
 Applications written against Aether’s **API layer** (DTO annotations/builders, store ports, access-control SPI) must be **unit-testable without a running database or document store**.

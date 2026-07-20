@@ -1,9 +1,9 @@
 package fixtures;
 
-import org.aether.annotations.AetherRecord;
-import org.aether.annotations.MaxLength;
-import org.aether.annotations.MinLength;
-import org.aether.annotations.RegexMatch;
+import org.dempsay.aether.annotations.AetherRecord;
+import org.dempsay.aether.annotations.MaxLength;
+import org.dempsay.aether.annotations.MinLength;
+import org.dempsay.aether.annotations.RegexMatch;
 
 @AetherRecord
 public record MyDto(

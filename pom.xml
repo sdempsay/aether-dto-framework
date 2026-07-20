@@ -8,9 +8,9 @@
     <version>1.0.4</version>
   </parent>
 
-  <groupId>org.aether</groupId>
+  <groupId>org.dempsay.aether</groupId>
   <artifactId>aether</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Aether Persistence Framework</name>
@@ -33,22 +33,22 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.aether</groupId>
+        <groupId>org.dempsay.aether</groupId>
         <artifactId>aether-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.aether</groupId>
+        <groupId>org.dempsay.aether</groupId>
         <artifactId>aether-builder-gen</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.aether</groupId>
+        <groupId>org.dempsay.aether</groupId>
         <artifactId>aether-runtime</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.aether</groupId>
+        <groupId>org.dempsay.aether</groupId>
         <artifactId>aether-store-fs</artifactId>
         <version>${project.version}</version>
       </dependency>
