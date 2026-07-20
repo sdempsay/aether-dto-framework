@@ -1,5 +1,11 @@
 # Actions log
 
+## 2026-07-20 — @AetherRecord CLASS retention for multi-module store-gen
+
+- `@AetherRecord` retention SOURCE → CLASS so `aether-store-gen` can detect markers on
+  records compiled in a separate api module (SOURCE is discarded from class files).
+- Unblocks sibling aether-test `@AetherStoreProviders` on impl package-info.
+
 ## 2026-07-20 — Refresh agent docs (packages + store-memory)
 
 - Updated `agents.md` and `AGENT-USAGE.md`: `org.dempsay.aether.api.*` package map, module/provider split, checklists/mistakes.
