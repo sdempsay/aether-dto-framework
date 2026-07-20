@@ -205,6 +205,55 @@ public class TestAetherBuilderProcessor {
         assertFalse(captured.get() != null);
     }
 
+    /**
+     * Generated sources must always satisfy dempsay checkstyle conventions — even when
+     * a consumer excludes {@code target/generated-sources} from their scan.
+     */
+    @Test
+    public void generatedSourcesMeetCheckstyleConventions() throws Exception {
+        compileFixtures(
+                "MyDto.java",
+                "SafeDto.java",
+                "RegexDto.java",
+                "ConfigDto.java",
+                "Named.java",
+                "NamedDto.java");
+
+        final List<Path> generated = Files.walk(outputDir)
+                .filter(p -> p.toString().endsWith(".java"))
+                .filter(p -> {
+                    final String name = p.getFileName().toString();
+                    return name.endsWith("Builder.java") || name.endsWith("Store.java");
+                })
+                .toList();
+        assertFalse(generated.isEmpty(), "Expected generated Builder/Store sources");
+
+        for (final Path path : generated) {
+            final String source = Files.readString(path);
+            final String file = path.getFileName().toString();
+            assertFalse(
+                    source.contains("() {}"),
+                    file + ": empty constructor/method must use '{ }' not '{}' (WhitespaceAround)");
+            // Method parameters must be final (dempsay FinalParameters).
+            // Match: public/private returnType name(Type param) without final after '('.
+            assertFalse(
+                    source.matches(
+                            "(?s).*(?:public|private)\\s+\\S+\\s+\\w+\\s*\\(\\s*"
+                                    + "(?!final\\b)[A-Za-z0-9_.<>,\\[\\]\\s]+\\s+\\w+\\s*\\).*"),
+                    file + ": method parameters must be final (FinalParameters)");
+            if (source.contains("import java.") && source.contains("import org.")) {
+                assertTrue(
+                        source.contains("\n\nimport org."),
+                        file + ": blank line required between java.* and org.* imports");
+            }
+            if (source.contains(".length()")) {
+                assertTrue(
+                        source.contains("final int "),
+                        file + ": length locals should be final");
+            }
+        }
+    }
+
     private void compileFixtures(final String... fixtureNames) {
         final DiagnosticCollector<JavaFileObject> diagnostics = compileFixturesWithDiagnostics(fixtureNames);
         final String errors = diagnostics.getDiagnostics().stream()

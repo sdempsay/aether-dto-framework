@@ -8,6 +8,13 @@
 - **Version:** `1.1.0-SNAPSHOT` (post-rename baseline).
 - Rationale: match dempsay reverse-DNS (`org.dempsay.utils`, `org.dempsay.support.jsr269`, consumer `org.dempsay.aether.test`); avoid collision/confusion with historical Maven/Eclipse Aether.
 
+## Generated code must pass checkstyle
+
+- FreeMarker / JSR-269 output (**builders**, **store interfaces**, validation snippets) **must** satisfy dempsay checkstyle (Java 21 ruleset) **as emitted**.
+- Consumers may exclude `target/generated-sources` from their scan for speed; that does **not** relax this requirement.
+- Known rules to honor in templates: `FinalParameters`, empty blocks `{ }` (not `{}`), import group blank lines, `final` locals where practical, no tabs/trailing whitespace, file ends with newline.
+- Regression: `TestAetherBuilderProcessor.generatedSourcesMeetCheckstyleConventions`.
+
 ## OSGi packaging (dempsay-felix-parent)
 
 - Reactor parent is **`org.dempsay.maven:dempsay-felix-parent:1.1.0-SNAPSHOT`** (not bare dempsay-parent).

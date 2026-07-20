@@ -85,6 +85,7 @@ Reactor parent: `dempsay-felix-parent`. Public packages via `felix.bundle.export
 
 - Java 21+, flat record DTOs only for MVP (no collections or nested records).
 - Generated builders implement `AetherBuilder<T>` and record view interfaces when compatible.
+- **Generated code must pass dempsay checkstyle** (templates in `aether-builder-gen`). Consumer projects may ignore generated sources; aether still emits clean Java. See PRD-updated “Generated code must pass checkstyle”.
 - Run `mvn test` from the repo root to verify changes.
 - **Testability goal:** keep app-facing surface on API ports so consumers can unit-test with fakes (in-memory store, allow-all AAA) — never design so unit tests require a live DB/document server.
 - **JUnit:** dempsay-parent enables `junit-jupiter` when `src/test/resources/tests.md` exists — do not hand-add junit deps to module POMs; add that file instead.

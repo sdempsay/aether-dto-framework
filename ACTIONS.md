@@ -4,6 +4,7 @@
 
 - FreeMarker `Builder.java.ftl` / `validation.java.ftl`: `final` method params, empty ctor `{ }`, blank line between java/third-party imports, `final` length locals, minimal class/method Javadoc.
 - Unblocks aether-test consumers that scan `target/generated-sources` (no exclude needed).
+- Policy: emit checkstyle-clean code always (even if consumers exclude generated). Regression test `generatedSourcesMeetCheckstyleConventions`; documented in PRD-updated / agents / AGENT-USAGE.
 
 ## 2026-07-20 — T9: AetherResourceStore.list (unfiltered read-all)
 
